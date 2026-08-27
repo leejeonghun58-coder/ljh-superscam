@@ -8,6 +8,13 @@ export type LeadtimeGap = {
   gap: number | null;
 };
 
+export function formatScmQueryError(message: string) {
+  if (/invalid schema:\s*analytics/i.test(message)) {
+    return `${message} — Supabase Project Settings > API > Data API > Exposed schemas에서 analytics를 체크하고 Save한 뒤 개발 서버를 재시작하세요. analytics 스키마가 없다면 dump.sql을 먼저 복원해야 합니다.`;
+  }
+  return message;
+}
+
 function value(row: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== null && row[key] !== '') return row[key];

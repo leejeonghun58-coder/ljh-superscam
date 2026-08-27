@@ -152,3 +152,6 @@ reason?: 'NO_USAGE' | 'NO_LEADTIME';
 | 데이터가 빈 배열 | 스키마 미노출 | Settings → API → Exposed schemas 에 `core`, `analytics` 추가 |
 | 설정을 고쳤는데 그대로 | dev 서버 캐시 | `Ctrl+C` 후 `npm run dev` |
 | 화면이 갱신 안 됨 | 페이지 캐시 | `export const dynamic = 'force-dynamic'` 추가 |
+
+
+사용자가 에러가 나서 해결해달라고 요청할때에 error.md 파일을 만들어서, 매번 그 에러와 해결책을 기재하고 업데이트해줘.

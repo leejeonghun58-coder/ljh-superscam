@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeLeadtimeGap } from './scm-model.ts';
+import { formatScmQueryError, normalizeLeadtimeGap } from './scm-model.ts';
 
 test('normalizes analytics leadtime rows into the screen model', () => {
   const result = normalizeLeadtimeGap({
@@ -52,4 +52,11 @@ test('reads the real analytics.v_leadtime_gap column names', () => {
     p80: 33,
     gap: 8,
   });
+});
+
+test('explains how to recover from an unexposed analytics schema', () => {
+  assert.match(
+    formatScmQueryError('Invalid schema: analytics'),
+    /Exposed schemas.*analytics.*Save.*재시작/s,
+  );
 });

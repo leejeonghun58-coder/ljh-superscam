@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatScmQueryError, normalizeLeadtimeGap } from './scm-model.ts';
+import { formatScmQueryError, normalizeLeadtimeGap, normalizeStockoutRisk } from './scm-model.ts';
 
 test('normalizes analytics leadtime rows into the screen model', () => {
   const result = normalizeLeadtimeGap({
@@ -59,4 +59,38 @@ test('explains how to recover from an unexposed analytics schema', () => {
     formatScmQueryError('Invalid schema: analytics'),
     /Exposed schemas.*analytics.*Save.*재시작/s,
   );
+});
+
+test('normalizes stockout risk rows and preserves unknown reasons', () => {
+  const result = normalizeStockoutRisk({
+    item_id: 'ITEM020',
+    item_name: '정착 유닛',
+    supplier_id: 'SUP012',
+    current_stock: 723,
+    inbound_qty: 361,
+    available_qty: 1084,
+    daily_usage_avg: null,
+    cv: 0.4,
+    planned_lead_time: 24,
+    stockout_days: null,
+    stockout_date: null,
+    risk_status: 'UNKNOWN',
+    reason: 'NO_USAGE',
+  });
+
+  assert.deepEqual(result, {
+    itemId: 'ITEM020',
+    itemName: '정착 유닛',
+    supplierId: 'SUP012',
+    currentStock: 723,
+    inboundQty: 361,
+    availableQty: 1084,
+    dailyUsageAvg: null,
+    cv: 0.4,
+    plannedLeadTime: 24,
+    stockoutDays: null,
+    stockoutDate: null,
+    riskStatus: 'UNKNOWN',
+    reason: 'NO_USAGE',
+  });
 });

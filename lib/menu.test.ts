@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MENU, USER_MENU, WORKFLOW_MENU } from './menu.ts';
+import { MENU, USER_MENU, WORKFLOW_MENU, getMenuForRole } from './menu.ts';
 
 test('기존 workflow 6단계가 공통 메뉴 정의에 모두 등록된다', () => {
   assert.deepEqual(
@@ -29,4 +29,8 @@ test('USER 메뉴에는 분석 화면이 유지된다', () => {
 
 test('관리자 데이터 관리 메뉴가 등록된다', () => {
   assert.ok(MENU.ADMIN.some((item) => item.href === '/admin/data-management'));
+});
+test('USER에게 ADMIN 메뉴를 노출하지 않는다', () => {
+  assert.equal(getMenuForRole('USER').ADMIN.length, 0);
+  assert.ok(getMenuForRole('ADMIN').ADMIN.length > 0);
 });

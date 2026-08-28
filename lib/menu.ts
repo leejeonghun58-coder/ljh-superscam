@@ -23,3 +23,7 @@ export const ADMIN_MENU: MenuItem[] = [
 ];
 
 export const MENU = { WORKFLOW: WORKFLOW_MENU, USER: USER_MENU, ADMIN: ADMIN_MENU } as const;
+
+export function getMenuForRole(role: 'ADMIN' | 'USER') {
+  return { WORKFLOW: WORKFLOW_MENU, USER: USER_MENU, ADMIN: role === 'ADMIN' ? ADMIN_MENU : [] };
+}

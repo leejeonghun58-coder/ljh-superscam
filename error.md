@@ -236,3 +236,21 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 원인: 기존 테스트 파일 하단에 새 테스트와 import를 append했다.
 - 해결: 각 테스트 파일의 import를 파일 상단의 단일 블록으로 통합하고 전체 테스트를 다시 구성했다.
 - 결과: `npm test` 24개 통과.
+
+## 2026-08-28 — STEP 4 Data Management 진입 시 서버 예외 digest
+
+- 증상: Vercel에서 `/admin/data-management` 선택 시 `Application error: a server-side exception has occurred`와 digest가 표시됨.
+- 원인: Sidebar가 USER에게도 ADMIN 메뉴를 노출했고, USER 접근 시 `requireAdmin()`이 호출하는 Next.js `forbidden()`이 `experimental.authInterrupts` 비활성 상태에서 실행되어 정상 403 대신 예외로 처리됨.
+- 해결: `next.config.ts`에 `experimental.authInterrupts: true`를 활성화하고 `app/forbidden.tsx` 403 경계 화면을 추가했다. `getMenuForRole()`을 통해 ADMIN 메뉴는 ADMIN에게만 노출한다. 서버의 `requireAdmin()` 및 DB RLS 검증은 그대로 유지한다.
+
+## 2026-08-28 — 권한 처리 수정 후 Next 설정 구문 오류
+
+- 증상: `npm run build`에서 `next.config.ts`의 `Expected unicode escape` 오류 발생.
+- 원인: PowerShell 문자열 치환 시 줄바꿈이 실제 개행이 아니라 리터럴 `\n`으로 저장됨.
+- 해결: `next.config.ts`를 정상 개행 형식으로 다시 저장했다.
+
+## 2026-08-28 — 권한 메뉴 수정 후 Sidebar 구문 오류
+
+- 증상: `npm run build`에서 `sidebar.tsx`의 `Expected unicode escape` 오류 발생.
+- 원인: 문자열 치환 중 import 사이의 줄바꿈이 리터럴 `\n`으로 기록됨.
+- 해결: `sidebar.tsx`를 정상 개행 형식으로 재작성했다.

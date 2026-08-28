@@ -266,3 +266,21 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 증상: layout 수정 명령에서 `Missing ')' in method call` 구문 오류가 발생해 첫 번째 수정 시도는 실행되지 않음.
 - 원인: PowerShell 문자열 안의 JSX 큰따옴표를 잘못 escape함.
 - 해결: 작은따옴표 기반 문자열 치환으로 다시 실행했고, 메인·분석·USER layout에 실제 role 전달을 정상 반영함.
+
+## 2026-08-28 — 신규 ID ADMIN 지정 후 로그인 실패
+
+- 원인: Supabase Auth의 `auth.users` 인증 계정과 애플리케이션 권한 프로필 `core.app_user`는 별개다. 신규 Auth 사용자에 `core.app_user` 행이 없거나 `active = false`이면 `requireUser()`가 로그인 직후 비활성 사용자로 처리한다.
+- 추가 확인: `core.handle_new_auth_user` trigger가 실제 Supabase 프로젝트에 적용되어 있어야 신규 Auth 사용자 생성 시 프로필이 자동 생성된다. 저장소 migration을 push하는 것만으로 원격 DB에 trigger가 적용되지는 않는다.
+- 확인 쿼리: `auth.users`와 `core.app_user`를 `user_id`로 조인해 이메일, role, active를 확인한다.
+
+## 2026-08-28 — `at89c2@naver.com` 로그인 성공 후 ADMIN 메뉴 미표시
+
+- 확인: 제공된 화면에서 로그인은 성공했으므로 Supabase Auth 이메일/비밀번호 인증은 정상이다.
+- 증상: ADMIN 메뉴가 보이지 않으므로 현재 세션의 `core.app_user` role이 `USER`이거나 해당 프로필이 ADMIN으로 갱신되지 않은 상태로 판단된다.
+- 조치: `auth.users`와 `core.app_user`를 user_id로 조인해 해당 이메일의 role/active를 확인하고, 필요한 경우 role을 ADMIN으로 갱신한다.
+
+## 2026-08-28 — SQL Editor에서 신규 ADMIN profile upsert 실패
+
+- 증상: `core.app_user` upsert 실행 시 `관리자만 사용자를 변경할 수 있습니다`가 발생함.
+- 원인: `on conflict do update`가 `app_user_update_guard()` trigger를 실행하지만 SQL Editor 요청에는 애플리케이션 로그인 세션의 `auth.uid()`가 없어 `core.is_admin()`이 false가 됨.
+- 해결: 기존 활성 ADMIN 사용자의 UUID를 확인한 뒤 SQL Editor의 임시 request JWT claims에 해당 UUID를 설정하고 upsert한다. 이때도 DB trigger와 RLS 검사는 유지된다.

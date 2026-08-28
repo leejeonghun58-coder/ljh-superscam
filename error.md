@@ -284,3 +284,15 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 증상: `core.app_user` upsert 실행 시 `관리자만 사용자를 변경할 수 있습니다`가 발생함.
 - 원인: `on conflict do update`가 `app_user_update_guard()` trigger를 실행하지만 SQL Editor 요청에는 애플리케이션 로그인 세션의 `auth.uid()`가 없어 `core.is_admin()`이 false가 됨.
 - 해결: 기존 활성 ADMIN 사용자의 UUID를 확인한 뒤 SQL Editor의 임시 request JWT claims에 해당 UUID를 설정하고 upsert한다. 이때도 DB trigger와 RLS 검사는 유지된다.
+
+## 2026-08-28 — ADMIN UUID placeholder를 그대로 실행한 오류
+
+- 증상: `invalid input syntax for type uuid: "기존_ADMIN_UUID"` 발생.
+- 원인: SQL 예시의 placeholder를 실제 UUID로 교체하지 않고 실행함.
+- 해결: 기존 활성 ADMIN의 UUID를 서브쿼리로 자동 조회하는 SQL을 사용하거나, `auth.users.id`의 실제 UUID를 입력한다.
+
+## 2026-08-28 — 활성 ADMIN이 없어 bootstrap claims를 만들 수 없음
+
+- 증상: 기존 활성 ADMIN UUID를 자동 조회하는 SQL에서 `활성 ADMIN 계정이 없습니다.` 발생.
+- 원인: 현재 `core.app_user`에 활성 ADMIN이 한 명도 없어 `core.is_admin()`을 통과할 관리자 세션을 만들 수 없음.
+- 해결: 최초 관리자 bootstrap 시 SQL Editor에서 `app_user_update_guard`만 트랜잭션 동안 비활성화하고 대상 계정을 ADMIN/active로 설정한 뒤 즉시 다시 활성화한다. 이후 일반 role 변경은 애플리케이션의 관리자 세션을 사용한다.

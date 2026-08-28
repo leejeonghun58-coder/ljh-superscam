@@ -42,3 +42,7 @@
 .user-table td strong, .user-table td small { display: block; } .user-table td small { margin-top: 3px; color: var(--scm-muted); font-size: 10px; }
 .user-access-form { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; } .user-access-form select { padding: 7px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); background: var(--scm-surface); color: var(--scm-ink); font-size: 11px; }
 .active-toggle { display: inline-flex; align-items: center; gap: 4px; color: var(--scm-muted); font-size: 11px; white-space: nowrap; } .role-label { font-weight: 800; font-size: 11px; }
+.settings-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--scm-space-4); margin: 0; }
+.settings-grid div { padding: 14px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); background: var(--scm-surface-subtle); }
+.settings-grid dt { color: var(--scm-muted); font-size: 11px; } .settings-grid dd { margin: 7px 0 0; color: var(--scm-ink); font-size: 13px; font-weight: 700; }
+@media (max-width: 900px) { .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }

@@ -9,6 +9,7 @@ export const USER_MENU: MenuItem[] = [
 export const ADMIN_MENU: MenuItem[] = [
   { label: '관리자 홈', href: '/admin', section: 'ADMIN' },
   { label: '사용자 관리', href: '/admin/users', section: 'ADMIN' },
+  { label: 'Forecast 설정', href: '/admin/forecast-settings', section: 'ADMIN' },
 ];
 
 export const MENU = { USER: USER_MENU, ADMIN: ADMIN_MENU } as const;

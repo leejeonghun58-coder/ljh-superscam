@@ -142,3 +142,38 @@ Failed to create unified exec process: helper_unknown_error: setup refresh had e
 ### 해결
 
 권한이 필요한 독립 PowerShell 실행으로 프로젝트 접근을 복구했다. 일반 샌드박스 실행은 계속 실패했지만, 독립 실행에서는 프로젝트 확인·수정·테스트가 정상 동작했다.
+## 2026-08-28 — 로그인 후 다시 로그인 화면으로 돌아감
+
+### 증상
+
+이메일과 비밀번호를 입력해도 로그인 화면을 벗어나지 못함.
+
+### 원인 후보
+
+STEP 2 migration은 GitHub에 push되었지만 Supabase 프로젝트에 자동 적용되지 않습니다. `core.app_user` 테이블/`auth.users` 생성 trigger가 적용되지 않았거나, migration 적용 전에 이미 만들어진 Auth 사용자에게 `core.app_user` 행이 없으면 `signInWithPassword` 이후 `requireUser()`가 프로필을 찾지 못해 `/login?error=inactive`로 되돌립니다. 로그인 action은 `record_login()` 오류를 현재 무시하므로 실제 DB 미적용 원인이 화면에 드러나지 않습니다.
+
+### 해결
+
+1. Supabase SQL Editor에서 `supabase/migrations/20260828000200_step2_auth_rbac.sql`을 실행한다.
+2. migration 전에 만들어진 사용자 프로필을 보정한다.
+
+```sql
+insert into core.app_user (user_id, email, name)
+select id, email, coalesce(raw_user_meta_data ->> 'name', raw_user_meta_data ->> 'full_name')
+from auth.users u
+where not exists (select 1 from core.app_user p where p.user_id = u.id);
+```
+
+3. 최초 관리자 계정을 지정한다.
+
+```sql
+update core.app_user set role = 'ADMIN' where email = '관리자 이메일';
+```
+
+4. 로컬에서 테스트한다면 개발 서버를 실행한다.
+
+```bash
+npm run dev -- --port 3001
+```
+
+5. `/login`에서 다시 로그인한다.

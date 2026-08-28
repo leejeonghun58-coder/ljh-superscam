@@ -9,6 +9,7 @@ export type ImportType =
   | 'business_event';
 
 export type ImportMode = 'append' | 'upsert' | 'replace';
+export const IMPORT_MODES: ImportMode[] = ['append', 'upsert', 'replace'];
 export type BatchStatus = 'STAGED' | 'VALIDATED' | 'APPROVED' | 'IMPORTED' | 'ROLLED_BACK' | 'FAILED';
 export type ValidationSeverity = 'SUCCESS' | 'WARNING' | 'ERROR';
 export type SourceFormat = 'CSV' | 'XLSX';

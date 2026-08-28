@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { USER_MENU, WORKFLOW_MENU } from './menu.ts';
+import { MENU, USER_MENU, WORKFLOW_MENU } from './menu.ts';
 
 test('기존 workflow 6단계가 공통 메뉴 정의에 모두 등록된다', () => {
   assert.deepEqual(
@@ -25,4 +25,8 @@ test('workflow 메뉴는 레거시 화면의 단계 URL로 연결된다', () => 
 
 test('USER 메뉴에는 분석 화면이 유지된다', () => {
   assert.deepEqual(USER_MENU.map((item) => item.href), ['/analysis/leadtime', '/analysis/stockout']);
+});
+
+test('관리자 데이터 관리 메뉴가 등록된다', () => {
+  assert.ok(MENU.ADMIN.some((item) => item.href === '/admin/data-management'));
 });

@@ -46,3 +46,16 @@
 .settings-grid div { padding: 14px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); background: var(--scm-surface-subtle); }
 .settings-grid dt { color: var(--scm-muted); font-size: 11px; } .settings-grid dd { margin: 7px 0 0; color: var(--scm-ink); font-size: 13px; font-weight: 700; }
 @media (max-width: 900px) { .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+
+/* STEP 4 데이터 적재 화면 */
+.import-layout { display: grid; gap: var(--scm-space-5); }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--scm-space-4); margin-bottom: var(--scm-space-4); }
+.form-grid label, .mapping-grid label { display: grid; gap: 6px; color: var(--scm-muted); font-size: 11px; font-weight: 700; }
+.mapping-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--scm-space-4); margin-bottom: var(--scm-space-5); }
+.file-field { grid-column: span 1; }
+.import-preview { max-height: 420px; margin-bottom: var(--scm-space-4); }
+.validation-summary { display: flex; align-items: center; gap: var(--scm-space-4); flex-wrap: wrap; margin-bottom: var(--scm-space-4); color: var(--scm-muted); font-size: 12px; font-weight: 700; }
+.confirm-row { display: inline-flex !important; align-items: center; gap: 6px; color: var(--scm-warning) !important; font-size: 11px !important; }
+.callout.warning { color: var(--scm-warning); background: var(--scm-warning-bg); margin-bottom: var(--scm-space-4); }
+@media (max-width: 900px) { .form-grid, .mapping-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .form-grid, .mapping-grid { grid-template-columns: 1fr; } .file-field { grid-column: auto; } }

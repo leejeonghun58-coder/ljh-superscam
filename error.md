@@ -177,3 +177,62 @@ npm run dev -- --port 3001
 ```
 
 5. `/login`에서 다시 로그인한다.
+## 2026-08-28 — 재고 소진 위험 전체 품목 `NO_USAGE`
+
+### 증상
+
+`/analysis/stockout`에서 분석 품목 20개가 모두 `— + NO_USAGE`로 표시되고, 소진 위험·안전·30일 이내 소진 KPI가 모두 0으로 표시됨.
+
+### 원인
+
+STEP 3 migration의 `core.forecast_setting` 기본 행은 생성되지만 `train_start`, `train_end`, `test_start`, `test_end`가 모두 `NULL`인 상태임.
+
+`core.v_train_demand`는 다음 조건을 요구하므로 날짜 설정이 없으면 0행을 반환함.
+
+```sql
+s.train_start is not null
+and s.train_end is not null
+and u.use_date between s.train_start and s.train_end
+```
+
+이후 `core.v_usage_effective`가 빈 학습 뷰를 집계하고, `analytics.v_stockout_risk`의 사용량 조인이 모든 품목에서 `NULL`이 됨. 화면의 `NO_USAGE` 표시는 이 계산 불가 상태를 숫자 0으로 숨기지 않은 정상 표시임.
+
+### 확인 쿼리
+
+```sql
+select * from core.forecast_setting where setting_id = 'default';
+select count(*) from core.v_train_demand;
+select count(*) from core.v_test_actual;
+select * from analytics.v_data_coverage;
+```
+
+### 해결
+
+관리자 권한으로 `/admin/forecast-settings`에서 학습·검증 기간을 실제 데이터 범위 안에 설정해야 함. 저장 후 `/analysis/stockout`을 새로고침함.
+
+현재 dump 기준 데이터 범위는 `2025-03-03`부터 `2026-08-21`까지이며, 실제 운영 기준에 맞는 train/test 경계를 먼저 결정해야 함. 앱 코드에 날짜를 하드코딩하거나 계산 불가 값을 0으로 바꾸면 안 됨.
+## 2026-08-28 — STEP 4 SQL migration 작성 중 문법 오타
+
+### 증상
+
+신규 import migration의 함수 선언 앞에 불필요한 `a` 문자가 들어간 것을 자체 검토에서 발견함.
+
+### 해결
+
+원격 Supabase에 적용하기 전에 `create or replace function`으로 수정했다. SQL migration은 원격 적용 전 문자열 검토와 SQL Editor 실행 결과를 함께 확인한다.
+## 2026-08-28 — STEP 4 타입 점검에서 기존 정규식 target 오류
+
+### 증상
+
+`npx tsc --noEmit` 실행 시 `lib/scm-model.test.ts(60,44)`에서 정규식 플래그가 `es2018` 이상을 요구한다는 오류가 발생함.
+
+### 확인 결과
+
+STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `target: es5`와 충돌하는 상태임. Next.js production build의 별도 타입 검사 결과로 앱 영향 여부를 확인하고, 기존 테스트 파일/target 설정은 범위를 넓히지 않기 위해 보류함.
+
+## 2026-08-28 STEP 4 테스트 중복 import 오류
+
+- 증상: `parse.test.ts`, `validate.test.ts`에 테스트를 추가하는 과정에서 import 블록이 중복되어 `Identifier 'test' has already been declared`가 발생했다.
+- 원인: 기존 테스트 파일 하단에 새 테스트와 import를 append했다.
+- 해결: 각 테스트 파일의 import를 파일 상단의 단일 블록으로 통합하고 전체 테스트를 다시 구성했다.
+- 결과: `npm test` 24개 통과.

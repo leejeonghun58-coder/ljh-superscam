@@ -1,0 +1,2 @@
+import PageHeader from '@/components/shell/page-header';
+export default function AdminPage() { return <section className="analysis-page"><PageHeader eyebrow="ADMIN" title="관리자 홈" description="기준정보와 시스템 상태를 관리합니다." /><div className="panel"><p className="empty-state">관리자 기능은 다음 단계에서 연결됩니다.</p></div></section>; }

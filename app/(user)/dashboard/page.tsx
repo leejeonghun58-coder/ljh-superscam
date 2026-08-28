@@ -1,0 +1,2 @@
+import PageHeader from '@/components/shell/page-header';
+export default function DashboardPage() { return <section className="analysis-page"><PageHeader title="전체 현황" description="월간 발주계획의 주요 상태를 확인합니다." /><div className="panel"><p className="empty-state">분석 메뉴에서 리드타임과 재고 소진 위험을 확인하세요.</p></div></section>; }

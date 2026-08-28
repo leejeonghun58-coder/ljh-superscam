@@ -1,0 +1,22 @@
+.app-shell-v2 { min-height: 100vh; display: flex; background: var(--scm-canvas); }
+.app-sidebar { width: 240px; flex: 0 0 240px; padding: 24px 16px; background: var(--scm-navy); color: var(--scm-white); display: flex; flex-direction: column; gap: 28px; }
+.app-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.app-brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--scm-primary); font-weight: 800; }
+.app-brand strong, .app-brand small { display: block; }
+.app-brand strong { font-size: 14px; }
+.app-brand small { margin-top: 3px; color: var(--scm-navy-muted); font-size: 10px; }
+.menu-group { display: grid; gap: 9px; }
+.menu-label { padding: 0 10px; color: var(--scm-navy-muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.menu-list { display: grid; gap: 4px; }
+.menu-item { padding: 10px; border-radius: var(--scm-radius-sm); color: var(--scm-navy-text); text-decoration: none; font-size: 13px; }
+.menu-item:hover, .menu-item.active { background: var(--scm-primary); color: var(--scm-white); }
+.sidebar-footer { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid var(--scm-navy-line); color: var(--scm-white); font-size: 11px; line-height: 1.6; }
+.sidebar-footer span { color: var(--scm-navy-muted); }
+.app-main { min-width: 0; flex: 1; }
+.app-topbar { min-height: 72px; padding: 0 var(--scm-space-8); display: flex; align-items: center; justify-content: space-between; gap: var(--scm-space-4); background: var(--scm-surface); border-bottom: 1px solid var(--scm-line); }
+.topbar-kicker { display: block; color: var(--scm-primary); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.app-topbar strong { display: block; margin-top: 4px; font-size: 17px; }
+.topbar-meta { display: flex; align-items: center; gap: 14px; color: var(--scm-muted); font-size: 12px; }
+.live-badge { padding: 5px 9px; border-radius: 999px; color: var(--scm-safe); background: var(--scm-safe-bg); font-size: 10px; font-weight: 800; }
+.app-content { max-width: 1440px; padding: var(--scm-space-8); margin: 0 auto; }
+@media (max-width: 760px) { .app-shell-v2 { display: block; } .app-sidebar { width: 100%; gap: 16px; padding: 16px; } .menu-group { gap: 6px; } .menu-list { grid-template-columns: repeat(3, 1fr); } .menu-label, .sidebar-footer { display: none; } .app-topbar { padding: 14px 18px; } .app-content { padding: 22px 18px 40px; } }

@@ -1,6 +1,40 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+@import "../styles/shell.css";
+@import "../styles/components.css";
+@import "../styles/chart.css";
+
 
 :root {
+  --scm-canvas: #f6f8fb;
+  --scm-surface: #ffffff;
+  --scm-surface-subtle: #f7f9fc;
+  --scm-ink: #172033;
+  --scm-muted: #697386;
+  --scm-line: #e6eaf0;
+  --scm-line-subtle: #edf0f4;
+  --scm-primary: #2563eb;
+  --scm-primary-bg: #eaf2ff;
+  --scm-safe: #15803d;
+  --scm-safe-bg: #eaf8f1;
+  --scm-warning: #b45309;
+  --scm-warning-bg: #fff6e4;
+  --scm-critical: #dc2626;
+  --scm-critical-bg: #fff0ef;
+  --scm-muted-bg: #f0f3f6;
+  --scm-navy: #102b4b;
+  --scm-navy-text: #c3d2e3;
+  --scm-navy-muted: #8fa7c0;
+  --scm-navy-line: rgba(255, 255, 255, .12);
+  --scm-white: #fff;
+  --scm-radius: 14px;
+  --scm-radius-sm: 9px;
+  --scm-space-3: 8px;
+  --scm-space-4: 12px;
+  --scm-space-5: 16px;
+  --scm-space-6: 24px;
+  --scm-space-8: 32px;
+  --scm-shadow: 0 3px 12px rgba(16, 43, 75, .04);
+
   --ink: #182230;
   --muted: #718096;
   --line: #e3e8ef;

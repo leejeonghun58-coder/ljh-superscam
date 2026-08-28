@@ -1,0 +1,1 @@
+.chart-placeholder { min-height: 180px; display: grid; place-items: center; color: var(--scm-muted); background: var(--scm-surface-subtle); border: 1px dashed var(--scm-line); border-radius: var(--scm-radius-sm); }

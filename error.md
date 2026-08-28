@@ -129,3 +129,16 @@ http://localhost:3001/analysis/leadtime
 ```
 
 환경변수를 변경한 뒤에는 개발 서버를 완전히 종료하고 프로젝트 루트에서 다시 실행한다.
+## 2026-08-28 — 터미널 런타임 초기화 실패
+
+### 증상
+
+Codex의 일반 `exec_command` 실행 시 다음 오류가 발생함.
+
+```text
+Failed to create unified exec process: helper_unknown_error: setup refresh had errors
+```
+
+### 해결
+
+권한이 필요한 독립 PowerShell 실행으로 프로젝트 접근을 복구했다. 일반 샌드박스 실행은 계속 실패했지만, 독립 실행에서는 프로젝트 확인·수정·테스트가 정상 동작했다.

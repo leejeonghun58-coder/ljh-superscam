@@ -1,0 +1,1 @@
+export default function LoginPage() { return <main className="standalone-page"><h1>로그인</h1><p>인증 연동 준비 중입니다.</p></main>; }

@@ -254,3 +254,9 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 증상: `npm run build`에서 `sidebar.tsx`의 `Expected unicode escape` 오류 발생.
 - 원인: 문자열 치환 중 import 사이의 줄바꿈이 리터럴 `\n`으로 기록됨.
 - 해결: `sidebar.tsx`를 정상 개행 형식으로 재작성했다.
+
+## 2026-08-28 — STEP 4 메뉴가 보이지 않음
+
+- 증상: ADMIN 사용자가 로그인해도 Sidebar에 STEP 4 `Data Management` 메뉴가 표시되지 않음.
+- 원인: `AppShell`이 기본 `role='USER'`로 동작하는데 `app/(admin)/layout.tsx`가 `role='ADMIN'`을 전달하지 않음.
+- 해결: 관리자 layout에서 `<AppShell role="ADMIN">`을 사용하도록 수정했다. USER의 ADMIN 메뉴 숨김 동작은 유지한다.

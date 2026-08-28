@@ -260,3 +260,9 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 증상: ADMIN 사용자가 로그인해도 Sidebar에 STEP 4 `Data Management` 메뉴가 표시되지 않음.
 - 원인: `AppShell`이 기본 `role='USER'`로 동작하는데 `app/(admin)/layout.tsx`가 `role='ADMIN'`을 전달하지 않음.
 - 해결: 관리자 layout에서 `<AppShell role="ADMIN">`을 사용하도록 수정했다. USER의 ADMIN 메뉴 숨김 동작은 유지한다.
+
+## 2026-08-28 — role 전달 수정 중 PowerShell 인용 오류
+
+- 증상: layout 수정 명령에서 `Missing ')' in method call` 구문 오류가 발생해 첫 번째 수정 시도는 실행되지 않음.
+- 원인: PowerShell 문자열 안의 JSX 큰따옴표를 잘못 escape함.
+- 해결: 작은따옴표 기반 문자열 치환으로 다시 실행했고, 메인·분석·USER layout에 실제 role 전달을 정상 반영함.

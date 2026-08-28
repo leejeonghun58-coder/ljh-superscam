@@ -9,8 +9,9 @@ import SupplyStep from '@/components/workflow/supply-step';
 import MasterStep from '@/components/workflow/master-step';
 import CalculationStep from '@/components/workflow/calculation-step';
 import ReportStep from '@/components/workflow/report-step';
+import type { WorkflowStepId } from '@/lib/menu';
 
-export type StepId = 'dashboard' | 'demand' | 'supply' | 'master' | 'calculation' | 'report';
+export type StepId = WorkflowStepId;
 
 const steps: { id: StepId; label: string; short: string; kicker: string; icon: typeof Gauge }[] = [
   { id: 'dashboard', label: '전체 현황', short: '현황', kicker: 'OVERVIEW', icon: Gauge },
@@ -21,8 +22,8 @@ const steps: { id: StepId; label: string; short: string; kicker: string; icon: t
   { id: 'report', label: '보고자료', short: '보고', kicker: 'EXECUTIVE REPORT', icon: FileText },
 ];
 
-export default function ProcurementApp() {
-  const [active, setActive] = useState<StepId>('dashboard');
+export default function ProcurementApp({ initialStep = 'dashboard' }: { initialStep?: StepId }) {
+  const [active, setActive] = useState<StepId>(initialStep);
   const currentIndex = steps.findIndex((step) => step.id === active);
   const current = steps[currentIndex];
   const completedCount = Math.max(0, currentIndex);

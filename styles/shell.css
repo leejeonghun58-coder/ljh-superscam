@@ -20,3 +20,4 @@
 .live-badge { padding: 5px 9px; border-radius: 999px; color: var(--scm-safe); background: var(--scm-safe-bg); font-size: 10px; font-weight: 800; }
 .app-content { max-width: 1440px; padding: var(--scm-space-8); margin: 0 auto; }
 @media (max-width: 760px) { .app-shell-v2 { display: block; } .app-sidebar { width: 100%; gap: 16px; padding: 16px; } .menu-group { gap: 6px; } .menu-list { grid-template-columns: repeat(3, 1fr); } .menu-label, .sidebar-footer { display: none; } .app-topbar { padding: 14px 18px; } .app-content { padding: 22px 18px 40px; } }
+.sidebar-logout { margin-top: -12px; } .sidebar-logout button { width: 100%; padding: 9px 10px; border: 1px solid var(--scm-navy-line); border-radius: var(--scm-radius-sm); color: var(--scm-navy-text); background: transparent; text-align: left; font-size: 12px; cursor: pointer; } .sidebar-logout button:hover { color: var(--scm-white); background: rgba(255,255,255,.08); }

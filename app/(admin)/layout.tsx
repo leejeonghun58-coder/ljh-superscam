@@ -1,3 +1,5 @@
 import type { ReactNode } from 'react';
 import AppShell from '@/components/shell/app-shell';
-export default function AdminLayout({ children }: { children: ReactNode }) { return <AppShell title="관리자">{children}</AppShell>; }
+import { requireAdmin } from '@/lib/auth';
+export const dynamic = 'force-dynamic';
+export default async function AdminLayout({ children }: { children: ReactNode }) { await requireAdmin(); return <AppShell title="관리자">{children}</AppShell>; }

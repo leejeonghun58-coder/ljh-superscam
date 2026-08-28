@@ -33,3 +33,12 @@
 .dashboard-link strong, .dashboard-link small { display: block; }
 .dashboard-link small { margin-top: 4px; color: var(--scm-muted); font-size: 11px; }
 .dashboard-link-arrow { color: var(--scm-primary); font-size: 18px; }
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: var(--scm-space-6); background: var(--scm-canvas); }
+.auth-card { width: min(100%, 420px); padding: 32px; background: var(--scm-surface); border: 1px solid var(--scm-line); border-radius: var(--scm-radius); box-shadow: var(--scm-shadow); }
+.auth-card h1 { margin: 8px 0; font-size: 26px; } .auth-card > p { margin: 0 0 24px; color: var(--scm-muted); font-size: 13px; }
+.auth-form { display: grid; gap: 16px; } .auth-form label { display: grid; gap: 6px; color: var(--scm-ink); font-size: 12px; font-weight: 700; }
+.auth-form input { width: 100%; padding: 10px 11px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); color: var(--scm-ink); background: var(--scm-surface); }
+.auth-form input:focus { outline: 2px solid var(--scm-primary-bg); border-color: var(--scm-primary); } .auth-error { margin: 0; color: var(--scm-critical); font-size: 12px; }
+.user-table td strong, .user-table td small { display: block; } .user-table td small { margin-top: 3px; color: var(--scm-muted); font-size: 10px; }
+.user-access-form { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; } .user-access-form select { padding: 7px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); background: var(--scm-surface); color: var(--scm-ink); font-size: 11px; }
+.active-toggle { display: inline-flex; align-items: center; gap: 4px; color: var(--scm-muted); font-size: 11px; white-space: nowrap; } .role-label { font-weight: 800; font-size: 11px; }

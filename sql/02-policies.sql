@@ -10,8 +10,8 @@
 
 -- 1) 테이블 권한 — RLS 와 별개로 필요합니다.
 --    01-grants.sql 은 select 만 줬으므로 쓰기 권한을 여기서 더합니다.
-grant select, insert, update, delete on core.leadtime_plan to anon, authenticated;
-grant select, insert, update, delete on core.usage_profile to anon, authenticated;
+grant select, insert, update, delete on core.leadtime_plan to authenticated;
+grant select, insert, update, delete on core.usage_profile to authenticated;
 
 -- 2) RLS 정책
 --    ⚠ 수업용입니다. publishable 키는 브라우저에 노출되므로,
@@ -21,17 +21,17 @@ drop policy if exists "수업용 전체 허용" on core.leadtime_plan;
 create policy "수업용 전체 허용"
   on core.leadtime_plan
   for all
-  to anon, authenticated
-  using (true)
-  with check (true);
+  to authenticated
+  using (core.is_admin())
+  with check (core.is_admin());
 
 drop policy if exists "수업용 전체 허용" on core.usage_profile;
 create policy "수업용 전체 허용"
   on core.usage_profile
   for all
-  to anon, authenticated
-  using (true)
-  with check (true);
+  to authenticated
+  using (core.is_admin())
+  with check (core.is_admin());
 
 -- 확인 — 두 줄이 나와야 합니다.
 select schemaname, tablename, policyname, roles, cmd

@@ -1,1 +1,2 @@
-export default function LoginPage() { return <main className="standalone-page"><h1>로그인</h1><p>인증 연동 준비 중입니다.</p></main>; }
+import LoginForm from './form';
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) { const params = await searchParams; const next = params.next?.startsWith('/') && !params.next.startsWith('//') ? params.next : '/'; return <main className="auth-page"><div className="auth-card"><span className="eyebrow">PROCUREMENT PLANNING</span><h1>로그인</h1><p>월간 발주계획 시스템에 로그인하세요.</p><LoginForm next={next} />{params.error === 'inactive' && <p className="auth-error" role="alert">활성화된 사용자 계정이 필요합니다.</p>}</div></main>; }

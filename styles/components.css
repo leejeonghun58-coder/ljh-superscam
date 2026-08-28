@@ -27,3 +27,9 @@
 .insight-banner { display: grid; margin-top: var(--scm-space-5); color: var(--scm-primary); background: var(--scm-primary-bg); } .insight-banner strong { color: var(--scm-ink); }
 @media (max-width: 1050px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .page-header { display: block; } .page-header .ui-button { margin-top: 14px; } .kpi-grid { grid-template-columns: 1fr; } }
+.dashboard-links { display: grid; gap: 8px; }
+.dashboard-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--scm-line); border-radius: var(--scm-radius-sm); color: var(--scm-ink); text-decoration: none; }
+.dashboard-link:hover { border-color: var(--scm-primary); background: var(--scm-primary-bg); }
+.dashboard-link strong, .dashboard-link small { display: block; }
+.dashboard-link small { margin-top: 4px; color: var(--scm-muted); font-size: 11px; }
+.dashboard-link-arrow { color: var(--scm-primary); font-size: 18px; }

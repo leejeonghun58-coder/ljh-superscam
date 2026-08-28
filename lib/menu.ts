@@ -13,6 +13,7 @@ export const WORKFLOW_MENU: MenuItem[] = [
 export const USER_MENU: MenuItem[] = [
   { label: '리드타임 격차', href: '/analysis/leadtime', section: 'USER' },
   { label: '재고 소진 위험', href: '/analysis/stockout', section: 'USER' },
+  { label: 'SKU 수요 프로파일', href: '/analysis/demand-profile', section: 'USER' },
 ];
 
 export const ADMIN_MENU: MenuItem[] = [

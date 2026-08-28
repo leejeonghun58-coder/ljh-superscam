@@ -59,3 +59,9 @@
 .callout.warning { color: var(--scm-warning); background: var(--scm-warning-bg); margin-bottom: var(--scm-space-4); }
 @media (max-width: 900px) { .form-grid, .mapping-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .form-grid, .mapping-grid { grid-template-columns: 1fr; } .file-field { grid-column: auto; } }
+/* STEP 5 SKU Demand Profile */
+.profile-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--scm-space-4); margin-bottom: var(--scm-space-3); }
+.profile-filters label { display: grid; gap: 6px; color: var(--scm-muted); font-size: 11px; font-weight: 700; }
+.filter-result { margin: 0 0 var(--scm-space-3); color: var(--scm-muted); font-size: 11px; }
+.reason-code { color: var(--scm-muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; }
+@media (max-width: 700px) { .profile-filters { grid-template-columns: 1fr; } }

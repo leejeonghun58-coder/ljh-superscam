@@ -296,3 +296,19 @@ STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `tar
 - 증상: 기존 활성 ADMIN UUID를 자동 조회하는 SQL에서 `활성 ADMIN 계정이 없습니다.` 발생.
 - 원인: 현재 `core.app_user`에 활성 ADMIN이 한 명도 없어 `core.is_admin()`을 통과할 관리자 세션을 만들 수 없음.
 - 해결: 최초 관리자 bootstrap 시 SQL Editor에서 `app_user_update_guard`만 트랜잭션 동안 비활성화하고 대상 계정을 ADMIN/active로 설정한 뒤 즉시 다시 활성화한다. 이후 일반 role 변경은 애플리케이션의 관리자 세션을 사용한다.
+
+## 2026-08-28 — STEP 5 메뉴 추가 중 TypeScript 구문 오류
+
+- 증상: `npm test`에서 `lib/menu.ts`의 `Expected unicode escape` 오류 발생.
+- 원인: PowerShell 문자열 치환 시 메뉴 항목 앞 줄바꿈이 리터럴 `\n`으로 저장됨.
+- 해결: 리터럴 문자를 실제 개행으로 치환했다.
+
+## 2026-08-28 — STEP 5 SQL round 타입 호환 보정
+
+- 확인: PostgreSQL `regr_slope`는 double precision을 반환하므로 `round(value, 4)` 호출이 타입 오류가 될 수 있음.
+- 해결: trend 값을 `numeric`으로 명시적 변환한 뒤 소수점 4자리로 반올림하도록 migration을 보정했다.
+
+## 2026-08-28 — STEP 5 테스트가 leakage 검사를 무의미하게 수행한 문제
+
+- 확인: 초기 SQL test 쿼리가 `where false`로 항상 0행만 반환해 test leakage를 실질적으로 검증하지 못함.
+- 해결: `pg_views.view_definition`에서 `core.v_train_demand` 사용과 `core.v_test_actual` 미사용을 직접 확인하도록 변경했다.

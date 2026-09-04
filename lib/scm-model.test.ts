@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeLeadtimeGap, normalizeStockoutKpi, normalizeStockoutRisk } from './scm-model.ts';
+import { normalizeBomRequirement, normalizeDemandProfileRt, normalizeOlAccuracy, normalizeShipmentTrend, normalizeLeadtimeGap, normalizeStockoutKpi, normalizeStockoutRisk } from './scm-model.ts';
+
+test('normalizes shipment trend including the live sample values', () => { const result = normalizeShipmentTrend({ item_code: '602K02693', period: '2026-08', shipment_qty: 40, ma_3m: 779, ma_6m: 772.3 }); assert.equal(result.itemCode, '602K02693'); assert.equal(result.shipmentQty, 40); assert.equal(result.average3m, 779); assert.equal(result.average6m, 772.3); assert.equal(result.average12m, null); });
+test('preserves demand profile null values and reason code', () => { assert.deepEqual(normalizeDemandProfileRt({ item_id: 'ITEM020', item_name: 'Unknown', adi: null, cv_squared: null, demand_type: null, reason_code: 'NO_DEMAND' }), { itemCode: 'ITEM020', itemName: 'Unknown', adi: null, cvSquared: null, demandType: null, reasonCode: 'NO_DEMAND' }); });
+test('normalizes monthly and fiscal-year OL accuracy rows', () => { assert.deepEqual(normalizeOlAccuracy({ model_base: 'MA_3M', item_code: 'ITEM001', period: '2026-08', fy: 'FY2026', wape: 0.12, bias: -2.5 }), { modelBase: 'MA_3M', itemCode: 'ITEM001', itemName: null, period: '2026-08', fiscalYear: 'FY2026', wape: 0.12, bias: -2.5, actualQty: null, forecastQty: null }); });
+test('normalizes BOM requirement rows without replacing missing values', () => { assert.deepEqual(normalizeBomRequirement({ model_base: 'MA_3M', item_code: 'ITEM001', part_code: 'PART001', required_qty: null, reason_code: 'NO_BOM' }), { modelBase: 'MA_3M', itemCode: 'ITEM001', itemName: null, partCode: 'PART001', partName: null, requiredQty: null, unit: null, reasonCode: 'NO_BOM' }); });
 
 test('normalizes analytics leadtime rows into the screen model', () => {
   const result = normalizeLeadtimeGap({
@@ -128,3 +133,7 @@ test('normalizes the stockout KPI summary row', () => {
     averageStockoutDays: 74.5,
   });
 });
+
+
+
+

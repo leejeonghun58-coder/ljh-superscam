@@ -1,5 +1,7 @@
 export type DemandType = 'SMOOTH' | 'INTERMITTENT' | 'ERRATIC' | 'LUMPY';
 
+export type DemandProfileKpi = { totalItems: number; nSmooth: number; nIntermittent: number; nErratic: number; nLumpy: number; nCrostonNeeded: number; nCalculationUnavailable: number; };
+
 export type LeadtimeGap = {
   supplier: string;
   country: string;
@@ -175,6 +177,11 @@ export function normalizeDemandProfile(row: Record<string, unknown>): DemandProf
   };
 }
 
+export function normalizeDemandProfileKpi(row: Record<string, unknown>): DemandProfileKpi {
+  const kpi = (keys: string[]) => numberValue(row, keys) ?? 0;
+  return { totalItems: kpi(['total_items']), nSmooth: kpi(['n_smooth']), nIntermittent: kpi(['n_intermittent']), nErratic: kpi(['n_erratic']), nLumpy: kpi(['n_lumpy']), nCrostonNeeded: kpi(['n_croston_needed']), nCalculationUnavailable: kpi(['n_calculation_unavailable']) };
+}
+
 export function normalizeForecastModelConfig(row: Record<string, unknown>): ForecastModelConfig {
   const demandTypes = value(row, ['applicable_demand_type']);
   return {
@@ -203,3 +210,13 @@ export function normalizeForecastRun(row: Record<string, unknown>): ForecastRun 
     message: value(row, ['message']) === null ? null : String(value(row, ['message'])), isStale: value(row, ['is_stale']) === true,
   };
 }
+
+export type ShipmentTrend = { itemCode: string; itemName: string | null; period: string | null; shipmentQty: number | null; average3m: number | null; average6m: number | null; average12m: number | null };
+export type DemandProfileRt = { itemCode: string; itemName: string | null; adi: number | null; cvSquared: number | null; demandType: DemandType | null; reasonCode: string | null };
+export type OlAccuracy = { modelBase: string | null; itemCode: string | null; itemName: string | null; period: string | null; fiscalYear: string | null; wape: number | null; bias: number | null; actualQty: number | null; forecastQty: number | null };
+export type BomRequirement = { modelBase: string | null; itemCode: string | null; itemName: string | null; partCode: string | null; partName: string | null; requiredQty: number | null; unit: string | null; reasonCode: string | null };
+
+export function normalizeShipmentTrend(row: Record<string, unknown>): ShipmentTrend { return { itemCode: String(value(row, ['item_code','item_id','sku','품목코드']) ?? '미정'), itemName: value(row, ['item_name','품목명']) === null ? null : String(value(row, ['item_name','품목명'])), period: value(row, ['period','month','month_period','기준월']) === null ? null : String(value(row, ['period','month','month_period','기준월'])), shipmentQty: numberValue(row, ['shipment_qty','quantity','qty','출고량']), average3m: numberValue(row, ['ma_3m','avg_3m','average_3m','3m_avg']), average6m: numberValue(row, ['ma_6m','avg_6m','average_6m','6m_avg']), average12m: numberValue(row, ['ma_12m','avg_12m','average_12m','12m_avg']) }; }
+export function normalizeDemandProfileRt(row: Record<string, unknown>): DemandProfileRt { return { itemCode: String(value(row, ['item_code','item_id','sku','품목코드']) ?? '미정'), itemName: value(row, ['item_name','품목명']) === null ? null : String(value(row, ['item_name','품목명'])), adi: numberValue(row, ['adi']), cvSquared: numberValue(row, ['cv_squared','cv2','cv_sq']), demandType: demandTypeValue(value(row, ['demand_type','demand_class'])), reasonCode: value(row, ['reason_code','reason']) === null ? null : String(value(row, ['reason_code','reason'])) }; }
+export function normalizeOlAccuracy(row: Record<string, unknown>): OlAccuracy { return { modelBase: value(row, ['model_base','model','model_id']) === null ? null : String(value(row, ['model_base','model','model_id'])), itemCode: value(row, ['item_code','item_id','sku']) === null ? null : String(value(row, ['item_code','item_id','sku'])), itemName: value(row, ['item_name','품목명']) === null ? null : String(value(row, ['item_name','품목명'])), period: value(row, ['period','month','기준월']) === null ? null : String(value(row, ['period','month','기준월'])), fiscalYear: value(row, ['fy','fiscal_year','fiscalYear','회계연도']) === null ? null : String(value(row, ['fy','fiscal_year','fiscalYear','회계연도'])), wape: numberValue(row, ['wape','WAPE']), bias: numberValue(row, ['bias','Bias']), actualQty: numberValue(row, ['actual_qty','actual','actual_quantity']), forecastQty: numberValue(row, ['forecast_qty','forecast','predicted_qty']) }; }
+export function normalizeBomRequirement(row: Record<string, unknown>): BomRequirement { return { modelBase: value(row, ['model_base','model']) === null ? null : String(value(row, ['model_base','model'])), itemCode: value(row, ['item_code','item_id','sku']) === null ? null : String(value(row, ['item_code','item_id','sku'])), itemName: value(row, ['item_name','품목명']) === null ? null : String(value(row, ['item_name','품목명'])), partCode: value(row, ['part_code','component_code','부품코드']) === null ? null : String(value(row, ['part_code','component_code','부품코드'])), partName: value(row, ['part_name','component_name','부품명']) === null ? null : String(value(row, ['part_name','component_name','부품명'])), requiredQty: numberValue(row, ['required_qty','requirement_qty','qty_per_model','소요량']), unit: value(row, ['unit','uom','단위']) === null ? null : String(value(row, ['unit','uom','단위'])), reasonCode: value(row, ['reason_code','reason']) === null ? null : String(value(row, ['reason_code','reason'])) }; }

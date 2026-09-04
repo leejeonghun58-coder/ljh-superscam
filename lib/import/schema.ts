@@ -1,4 +1,4 @@
-import type { ImportType } from './types.ts';
+import type { ColumnMapping, ImportType } from './types.ts';
 
 export type FieldRule = { field: string; required?: boolean; kind?: 'number' | 'date'; reference?: 'item' | 'supplier'; quantity?: boolean };
 export type ImportSchema = { fields: FieldRule[]; aliases: Record<string, string[]> };
@@ -16,7 +16,11 @@ export const IMPORT_SCHEMAS: Record<ImportType, ImportSchema> = {
 };
 
 function key(value: string) { return value.trim().toLowerCase().replace(/[\s_\-]/g, ''); }
-export function suggestColumnMapping(type: ImportType, columns: string[]) {
+export function suggestColumnMapping(type: ImportType, columns: string[]): ColumnMapping[] {
   const schema = IMPORT_SCHEMAS[type];
-  return Object.fromEntries(Object.entries(schema.aliases).map(([field, aliases]) => [field, columns.find((column) => aliases.some((alias) => key(alias) === key(column))) ?? null]));
+  return schema.fields.map(({ field }) => {
+    const aliases = schema.aliases[field] ?? [];
+    const sourceColumn = columns.find((column) => aliases.some((alias) => key(alias) === key(column))) ?? '';
+    return { sourceColumn, targetColumn: field, confidence: sourceColumn ? 'HIGH' : 'UNMAPPED' };
+  });
 }

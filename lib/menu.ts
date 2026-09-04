@@ -3,8 +3,16 @@ import { BarChart3, Boxes, Database, Gauge, LineChart, Settings2, Users, Workflo
 
 export type MenuItem = { href: string; label: string; description: string; icon: LucideIcon };
 
+export const WORKFLOW_MENU: MenuItem[] = [
+  { href: '/workflow?step=dashboard', label: '전체 현황', description: '월간 발주계획 요약', icon: Gauge },
+  { href: '/workflow?step=demand', label: '수요 확정', description: '수요 데이터 확정', icon: BarChart3 },
+  { href: '/workflow?step=supply', label: '재고·공급', description: '재고와 공급 확인', icon: Boxes },
+  { href: '/workflow?step=master', label: '마스터 검증', description: '마스터 데이터 검증', icon: Database },
+  { href: '/workflow?step=calculation', label: '발주량 계산', description: '발주량 계산', icon: Gauge },
+  { href: '/workflow?step=report', label: '보고자료', description: '보고자료 확인', icon: LineChart },
+];
+
 export const USER_MENU: MenuItem[] = [
-  { href: '/dashboard', label: '전체 현황', description: '월간 발주계획 요약', icon: Gauge },
   { href: '/analysis/leadtime', label: '리드타임 격차', description: '계획과 실제 소요일 비교', icon: LineChart },
   { href: '/analysis/stockout', label: '재고 소진 위험', description: '품목별 재고 위험 확인', icon: Boxes },
   { href: '/analysis/demand-profile', label: '수요 패턴', description: 'SKU Demand Profile', icon: BarChart3 },
@@ -24,7 +32,12 @@ export const ADMIN_MENU: MenuItem[] = [
 ];
 
 export type AppRole = 'ADMIN' | 'USER';
+export const MENU = { USER: USER_MENU, ADMIN: ADMIN_MENU };
+
+export function getMenuForRole(role: AppRole) {
+  return role === 'ADMIN' ? { USER: USER_MENU, ADMIN: ADMIN_MENU } : { USER: USER_MENU, ADMIN: [] as MenuItem[] };
+}
 
 export function menuForRole(role: AppRole): MenuItem[] {
-  return role === 'ADMIN' ? [...USER_MENU, ...ADMIN_MENU] : USER_MENU;
+  return role === 'ADMIN' ? [...WORKFLOW_MENU, ...USER_MENU, ...ADMIN_MENU] : [...WORKFLOW_MENU, ...USER_MENU];
 }

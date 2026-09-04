@@ -9,9 +9,9 @@ const authPolicyUrl = new URL('./auth-policy.ts', import.meta.url);
 test('STEP2 migration defines the RBAC database boundary', () => {
   assert.equal(existsSync(migrationUrl), true, 'STEP2 RBAC 마이그레이션이 있어야 합니다.');
   const sql = readFileSync(migrationUrl, 'utf8');
-  assert.match(sql, /create table[^;]+core\.app_user/is);
-  assert.match(sql, /create table[^;]+core\.audit_log/is);
-  assert.match(sql, /function core\.is_admin/is);
+  assert.match(sql, /create table[^;]+core\.app_user/i);
+  assert.match(sql, /create table[^;]+core\.audit_log/i);
+  assert.match(sql, /function core\.is_admin/i);
   assert.doesNotMatch(sql, /to\s+anon[\s\S]{0,120}(insert|update|delete)/i);
   assert.doesNotMatch(sql, /using\s*\(\s*true\s*\)/i);
 });
@@ -47,3 +47,4 @@ test('route access denies USER admin routes with 403', async () => {
   assert.deepEqual(policy.routeAccessDecision({ pathname: '/admin/users', authenticated: true, active: true, role: 'ADMIN' }), { kind: 'ALLOW' });
   assert.deepEqual(policy.routeAccessDecision({ pathname: '/analysis/leadtime', authenticated: false, active: false, role: null }), { kind: 'LOGIN_REQUIRED' });
 });
+

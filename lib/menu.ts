@@ -13,6 +13,7 @@ export const WORKFLOW_MENU: MenuItem[] = [
 ];
 
 export const USER_MENU: MenuItem[] = [
+  { href: '/agent', label: 'SCM Agent', description: '공급망 데이터에 질문', icon: Bot },
   { href: '/analysis/leadtime', label: '리드타임 격차', description: '계획과 실제 소요일 비교', icon: LineChart },
   { href: '/analysis/stockout', label: '재고 소진 위험', description: '품목별 재고 위험 확인', icon: Boxes },
   { href: '/analysis/demand-profile', label: '수요 패턴', description: 'SKU Demand Profile', icon: BarChart3 },

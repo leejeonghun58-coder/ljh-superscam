@@ -103,10 +103,15 @@ export async function getStockoutRisks(): Promise<{ rows: StockoutRisk[]; error:
 }
 
 
-async function readAnalyticsRows<T>(view: string, normalize: (row: Record<string, unknown>) => T, filterColumn: string, filterValue?: string): Promise<{ rows: T[]; error: string | null }> {
-  try { const supabase = await createSupabaseServerClient(); let query = supabase.schema('analytics').from(view).select('*'); if (filterValue) query = query.eq(filterColumn, filterValue); const { data, error } = await query; if (error) return { rows: [], error: error.message }; return { rows: (data ?? []).map((row) => normalize(row as Record<string, unknown>)), error: null }; } catch (error) { return { rows: [], error: error instanceof Error ? error.message : 'Supabase 조회에 실패했습니다.' }; }
+
+async function readAgentRows(schema: string, view: string, filterColumn: string, filterValue: string): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
+  try { const supabase = await createSupabaseServerClient(); const { data, error } = await supabase.schema(schema).from(view).select('*').eq(filterColumn, filterValue); if (error) return { rows: [], error: error.message }; return { rows: (data ?? []) as Record<string, unknown>[], error: null }; } catch (error) { return { rows: [], error: error instanceof Error ? error.message : 'Supabase 조회에 실패했습니다.' }; }
 }
-export function getShipmentTrend(itemCode?: string): Promise<{ rows: ShipmentTrend[]; error: string | null }> { return readAnalyticsRows('v_shipment_trend', normalizeShipmentTrend, 'item_code', itemCode); }
-export function getDemandProfileRt(itemCode?: string): Promise<{ rows: DemandProfileRt[]; error: string | null }> { return readAnalyticsRows('v_item_demand_profile', normalizeDemandProfileRt, 'item_code', itemCode); }
-export async function getOlAccuracy(modelBase?: string): Promise<{ rows: OlAccuracy[]; fyRows: OlAccuracy[]; error: string | null }> { const [monthly, yearly] = await Promise.all([readAnalyticsRows('v_ol_accuracy', normalizeOlAccuracy, 'model_base', modelBase), readAnalyticsRows('v_ol_accuracy_fy', normalizeOlAccuracy, 'model_base', modelBase)]); return { rows: monthly.rows, fyRows: yearly.rows, error: monthly.error ?? yearly.error }; }
-export function getBomRequirement(modelBase: string): Promise<{ rows: BomRequirement[]; error: string | null }> { return readAnalyticsRows('v_bom_requirement_x', normalizeBomRequirement, 'model_base', modelBase); }
+
+export async function getShipmentTrend(itemCode: string) { const { normalizeAgentShipmentTrend } = await import('./scm-model'); const result = await readAgentRows('analytics', 'v_shipment_by_hoc', 'item_code', itemCode); return { rows: result.rows.map(normalizeAgentShipmentTrend), error: result.error }; }
+
+export async function getDemandProfile(itemCode: string) { const { normalizeAgentDemandProfile } = await import('./scm-model'); const result = await readAgentRows('core', 'fact_shipment', 'item_code', itemCode); return { rows: result.rows.map(normalizeAgentDemandProfile), error: result.error }; }
+
+export async function getOlAccuracy(modelBase: string, fy?: string) { const { normalizeAgentOlAccuracy } = await import('./scm-model'); const monthly = await readAgentRows('core', 'fact_mc_plan_actual', 'model_base', modelBase); const rows = fy ? monthly.rows.filter((row) => String(row.fy ?? row.fiscal_year ?? '') === fy) : monthly.rows; return { rows: rows.map(normalizeAgentOlAccuracy), fyRows: [], error: monthly.error }; }
+
+export async function getBomRequirement(modelBase: string) { const { normalizeAgentBomRequirement } = await import('./scm-model'); const result = await readAgentRows('analytics', 'v_bom_requirement_x', 'model_base', modelBase); return { rows: result.rows.map(normalizeAgentBomRequirement), error: result.error }; }

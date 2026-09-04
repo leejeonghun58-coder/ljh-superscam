@@ -1,4 +1,5 @@
 import { cannotAnswer, parseAgentAnswer, agentAnswerResponseFormat, type AgentAnswer } from './schema.ts';
+import { mergeToolNumbers, validateAnswerNumbers } from './guardrail.ts';
 import { type AgentTool, type ToolRole, type ToolResult } from './tools.ts';
 import { callChatCompletion, type ChatMessage, type ChatRequest, type ChatResult } from './llm.ts';
 
@@ -32,6 +33,8 @@ export async function runAgent(input: AgentRequest, options: AgentOrchestratorOp
   const deadline = now() + (options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   const role = roleOf(input.user);
   let responseFormat: Record<string, unknown> = agentAnswerResponseFormat;
+  const allowedNumbers: Record<string, number> = {};
+  let regenerated = false;
 
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
     const remaining = deadline - now();
@@ -40,7 +43,18 @@ export async function runAgent(input: AgentRequest, options: AgentOrchestratorOp
     try { llmResult = await within(llm(request), remaining); } catch { llmResult = { message: null, content: null, toolCalls: [], error: 'LLM_ERROR' }; }
     if (!llmResult) return cannot('AGENT_TIMEOUT', trace, history);
     if (llmResult.error) return cannot('LLM_ERROR', trace, history);
-    if (llmResult.toolCalls.length === 0) return withTrace(parseAgentAnswer(llmResult.content), trace, history);
+    if (llmResult.toolCalls.length === 0) {
+      const parsedAnswer = parseAgentAnswer(llmResult.content);
+      if (parsedAnswer.cannot_answer) return withTrace(parsedAnswer, trace, history);
+      const validation = validateAnswerNumbers(parsedAnswer, allowedNumbers);
+      if (validation.ok) return withTrace(parsedAnswer, trace, history);
+      if (regenerated) return cannot('UNSUPPORTED_NUMERIC_CLAIM', trace, history);
+      regenerated = true;
+      history.push(llmResult.message ?? { role: 'assistant', content: llmResult.content });
+      history.push({ role: 'user', content: '숫자 검증에 실패했습니다. 출처 없는 숫자를 제거하거나 Tool 근거와 일치하도록 한 번만 다시 답변하세요: ' + validation.unmatched.map((claim) => claim.raw).join(', ') });
+      responseFormat = jsonObjectResponseFormat;
+      continue;
+    }
 
     const assistantMessage = llmResult.message ?? { role: 'assistant', content: llmResult.content, tool_calls: llmResult.toolCalls };
     history.push(assistantMessage);
@@ -68,9 +82,12 @@ export async function runAgent(input: AgentRequest, options: AgentOrchestratorOp
       const ok = reason === null && toolResult?.ok === true;
       trace.push({ name: toolCall.function.name, args, ok, ms: Math.max(0, now() - started), reason });
       if (!ok) return cannot(reason ?? 'TOOL_FAILED', trace, history);
-      history.push({ role: 'tool', content: toolMessage(toolResult as ToolResult), tool_call_id: toolCall.id });
+      const completedToolResult = toolResult as ToolResult;
+      Object.assign(allowedNumbers, mergeToolNumbers(toolCall.function.name, completedToolResult.numbers));
+      history.push({ role: 'tool', content: toolMessage(completedToolResult), tool_call_id: toolCall.id });
     }
     if (round === MAX_ROUNDS - 1) return cannot('TOOL_LOOP_LIMIT', trace, history);
   }
   return cannot('TOOL_LOOP_LIMIT', trace, history);
 }
+

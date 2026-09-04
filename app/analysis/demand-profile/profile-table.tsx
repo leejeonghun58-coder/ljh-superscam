@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Badge from '@/components/ui/badge';
-import DataTable, { type DataColumn } from '@/components/ui/data-table';
+import DataTable, { type Column } from '@/components/ui/data-table';
 import EmptyValue from '@/components/ui/empty-value';
 import type { DemandProfile, DemandType } from '@/lib/scm-model';
 
@@ -11,7 +11,7 @@ const typeLabels: Record<DemandType | 'ALL', string> = { ALL: '전체', SMOOTH: 
 const badgeStatus: Record<DemandType, 'SAFE' | 'WARNING' | 'CRITICAL'> = { SMOOTH: 'SAFE', INTERMITTENT: 'WARNING', ERRATIC: 'CRITICAL', LUMPY: 'WARNING' };
 
 function metric(value: number | null, reason: string | null, digits = 2) {
-  return value === null ? <EmptyValue reason={reason ?? 'NOT_AVAILABLE'} /> : value.toFixed(digits);
+  return value === null ? <EmptyValue reasonCode={reason ?? 'NOT_AVAILABLE'} /> : value.toFixed(digits);
 }
 
 export default function ProfileTable({ rows }: { rows: DemandProfile[] }) {
@@ -25,15 +25,15 @@ export default function ProfileTable({ rows }: { rows: DemandProfile[] }) {
     const matchesSearch = !query || row.itemId.toLowerCase().includes(query) || row.itemName.toLowerCase().includes(query);
     return matchesType && matchesAvailability && matchesSearch;
   }), [availability, rows, search, type]);
-  const columns: DataColumn<DemandProfile>[] = [
+  const columns: Column<DemandProfile>[] = [
     { key: 'itemId', label: 'SKU' },
     { key: 'itemName', label: '품목명' },
     { key: 'adi', label: 'ADI', align: 'right', render: (row) => metric(row.adi, row.reasonCode) },
     { key: 'cvSquared', label: 'CV²', align: 'right', render: (row) => metric(row.cvSquared, row.reasonCode) },
-    { key: 'zeroDemandRate', label: 'Zero-demand Rate', align: 'right', render: (row) => row.zeroDemandRate === null ? <EmptyValue reason={row.reasonCode ?? 'NOT_AVAILABLE'} /> : `${(row.zeroDemandRate * 100).toFixed(1)}%` },
+    { key: 'zeroDemandRate', label: 'Zero-demand Rate', align: 'right', render: (row) => row.zeroDemandRate === null ? <EmptyValue reasonCode={row.reasonCode ?? 'NOT_AVAILABLE'} /> : `${(row.zeroDemandRate * 100).toFixed(1)}%` },
     { key: 'trend', label: 'Trend', align: 'right', render: (row) => metric(row.trend, row.reasonCode) },
-    { key: 'demandType', label: 'Demand Type', render: (row) => row.demandType ? <Badge status={badgeStatus[row.demandType]} label={row.demandType} /> : <Badge status="CALCULATION_UNAVAILABLE" label="계산 불가" /> },
-    { key: 'seasonality', label: 'Seasonality', render: (row) => row.seasonality === null ? <EmptyValue reason="INSUFFICIENT_PERIODS" /> : row.seasonality ? '있음' : '없음' },
+    { key: 'demandType', label: 'Demand Type', render: (row) => row.demandType ? <Badge status={badgeStatus[row.demandType]}>{row.demandType}</Badge> : <Badge status="CALCULATION_UNAVAILABLE">계산 불가</Badge> },
+    { key: 'seasonality', label: 'Seasonality', render: (row) => row.seasonality === null ? <EmptyValue reasonCode="INSUFFICIENT_PERIODS" /> : row.seasonality ? '있음' : '없음' },
     { key: 'reasonCode', label: 'Reason', render: (row) => row.reasonCode ? <span className="reason-code">{row.reasonCode}</span> : '—' },
   ];
   return <>

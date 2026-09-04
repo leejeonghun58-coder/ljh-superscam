@@ -1,9 +1,13 @@
 export const IMPORT_TYPES = ['usage_history', 'inventory', 'item_master', 'supplier_master', 'purchase_order', 'goods_receipt', 'sales_order', 'business_event'] as const;
+export const IMPORT_MODES = ['append', 'upsert', 'replace'] as const;
 export type ImportType = typeof IMPORT_TYPES[number];
-export type ImportMode = 'append' | 'upsert' | 'replace';
+export type ImportMode = typeof IMPORT_MODES[number];
+export type MappingConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'MANUAL' | 'UNMAPPED';
+export type ColumnMapping = { sourceColumn: string; targetColumn: string | null; confidence: MappingConfidence };
+export type ParsedRow = { rowNumber: number; values: Record<string, unknown> };
 export type Severity = 'SUCCESS' | 'WARNING' | 'ERROR';
 export type ImportRow = Record<string, unknown>;
 export type ValidationIssue = { rowNumber: number; fieldName: string; code: string; message: string; severity: Exclude<Severity, 'SUCCESS'>; originalValue: unknown };
 export type ValidatedRow = { rowNumber: number; data: ImportRow; issues: ValidationIssue[] };
-export type ValidationResult = { rows: ValidatedRow[]; issues: ValidationIssue[]; summary: { totalRows: number; successRows: number; warningRows: number; errorRows: number } };
+export type ValidationResult = { rows: ValidatedRow[]; issues: ValidationIssue[]; summary: { totalRows: number; successRows: number; warningRows: number; errorRows: number }; counts: { success: number; warning: number; error: number }; errors: Array<{ rowNumber: number; fieldName: string; errorCode: string; errorMessage: string; severity: 'WARNING' | 'ERROR' }> };
 export type ImportReferences = { itemIds: Set<string>; supplierIds: Set<string> };

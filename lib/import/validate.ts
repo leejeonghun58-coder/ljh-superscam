@@ -29,5 +29,7 @@ export function validateRows(type: ImportType, rows: ImportRow[], references: Im
   });
   const errorRows = validated.filter((row) => row.issues.some((issue) => issue.severity === 'ERROR')).length;
   const warningRows = validated.filter((row) => !row.issues.some((issue) => issue.severity === 'ERROR') && row.issues.length > 0).length;
-  return { rows: validated, issues, summary: { totalRows: rows.length, successRows: rows.length - errorRows - warningRows, warningRows, errorRows } };
+  const counts = { success: rows.length - errorRows - warningRows, warning: warningRows, error: errorRows };
+  const errors = issues.map((issue) => ({ rowNumber: issue.rowNumber, fieldName: issue.fieldName, errorCode: issue.code, errorMessage: issue.message, severity: issue.severity }));
+  return { rows: validated, issues, summary: { totalRows: rows.length, successRows: counts.success, warningRows, errorRows }, counts, errors };
 }

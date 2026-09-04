@@ -293,3 +293,39 @@ select to_regclass('core.policy_config');
 ```
 
 결과가 `core.policy_config`로 나오면 STEP 5를 실행합니다. `null`이면 STEP 3을 먼저 실행합니다. 각 단계는 `if not exists`와 `on conflict do nothing`을 사용하므로 이미 적용된 단계도 재실행할 수 있습니다.
+
+---
+
+## #11 Vercel `next build` 연쇄 TypeScript 오류
+
+**증상**
+
+Vercel 배포에서 `IMPORT_MODES` 미export, `Panel.meta`/`EmptyValue.reason`/`Badge.label` 미지원, `updateUserAccess`·`login` 미export, `DataColumn`·`DemandType` 미export, 구식 `/api/import/*`의 삭제된 함수 import 등의 오류가 순차적으로 발생했습니다.
+
+**원인**
+
+이전 화면 코드가 현재 공통 UI 컴포넌트와 import/auth 모듈의 실제 export 계약을 따르지 않았습니다. 새 관리자 import API가 추가된 뒤 구식 API 라우트도 남아 있었습니다.
+
+**해결**
+
+공통 컴포넌트의 실제 prop/type(`description`, `reasonCode`, Badge children, `Column`, `status`)에 맞춰 화면을 수정하고, auth action과 DemandType/ValidationResult export를 현재 구현과 일치시켰습니다. 구식 import route는 삭제하지 않고 410 호환 응답으로 정리했으며, 실제 rollback 호출은 `/api/admin/imports/rollback`으로 연결했습니다.
+
+**검증**
+
+`npm run build` 성공. Next.js production route 생성과 type check를 통과했습니다.
+
+---
+
+## #12 `npm test` 레거시 계약 불일치
+
+**증상**
+
+`npm test`에서 48개 중 44개 통과, 4개 실패: `normalizeDemandProfileKpi`, `parseImportFile`, `MENU/WORKFLOW_MENU/getMenuForRole` export 누락 및 `suggestColumnMapping` 반환 형태 불일치.
+
+**원인**
+
+현재 구현으로 교체된 `scm-model`, import parser/schema, menu 모듈과 오래된 테스트가 서로 다른 API 계약을 기대합니다. 이는 이번 Vercel production build의 실패 원인은 아닙니다.
+
+**현재 상태**
+
+`npm run build`는 성공했습니다. 테스트 호환 export/반환 계약은 별도 정리 대상이며, 이번 배포 오류 수정 범위에는 포함하지 않았습니다.

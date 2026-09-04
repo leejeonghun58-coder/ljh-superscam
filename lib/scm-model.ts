@@ -1,3 +1,5 @@
+export type DemandType = 'SMOOTH' | 'INTERMITTENT' | 'ERRATIC' | 'LUMPY';
+
 export type LeadtimeGap = {
   supplier: string;
   country: string;
@@ -45,7 +47,7 @@ export type DemandProfile = {
   trend: number | null;
   recentChangeRate: number | null;
   peakPeriod: string | null;
-  demandType: 'SMOOTH' | 'INTERMITTENT' | 'ERRATIC' | 'LUMPY' | null;
+  demandType: DemandType | null;
   seasonality: boolean | null;
   reasonCode: string | null;
   stability: string | null;

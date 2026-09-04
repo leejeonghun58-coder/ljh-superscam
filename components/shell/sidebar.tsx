@@ -1,18 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { getMenuForRole, type MenuItem } from '@/lib/menu';
-import type { AccessRole } from '@/lib/auth-policy';
+import { usePathname } from 'next/navigation';
+import { menuForRole, type AppRole, type MenuItem } from '@/lib/menu';
 
 function MenuGroup({ label, items }: { label: string; items: MenuItem[] }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-  return <div className="menu-group"><span className="menu-label">{label}</span><nav className="menu-list" aria-label={label}>{items.map((item) => <Link key={item.href} href={item.href} className={`menu-item ${currentUrl === item.href ? 'active' : ''}`}>{item.label}</Link>)}</nav></div>;
+  return <div className="shell-nav-group"><div className="nav-label">{label}</div><nav className="nav-list" aria-label={label}>{items.map((item) => { const Icon = item.icon; const active = pathname === item.href || pathname.startsWith(`${item.href}/`); return <Link key={item.href} href={item.href} className={`nav-button ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}><span className="nav-number"><Icon size={14} aria-hidden="true" /></span><span>{item.label}</span></Link>; })}</nav></div>;
 }
 
-export default function Sidebar({ role = 'USER' }: { role?: AccessRole }) {
-  const menu = getMenuForRole(role);
-  return <aside className="app-sidebar"><div className="app-brand"><span className="app-brand-mark">OP</span><span><strong>월간 발주계획</strong><small>Procurement Planning</small></span></div><MenuGroup label="WORKFLOW" items={menu.WORKFLOW} /><MenuGroup label="USER" items={menu.USER} />{menu.ADMIN.length > 0 && <MenuGroup label="ADMIN" items={menu.ADMIN} />}<form action="/logout" method="post" className="sidebar-logout"><button type="submit">로그아웃</button></form><div className="sidebar-footer">한국후지필름BI<br /><span>SCM Prototype · Phase 1</span></div></aside>;
+export default function Sidebar({ role }: { role: AppRole }) {
+  const items = menuForRole(role);
+  return <aside className="sidebar"><Link href="/dashboard" className="brand"><span className="brand-mark">SCM</span><span className="brand-copy"><strong>SCM Intelligence</strong><span>월간 발주계획</span></span></Link><div className="shell-nav"><MenuGroup label="USER" items={items.filter((item) => !item.href.startsWith('/admin/'))} />{role === 'ADMIN' ? <MenuGroup label="ADMIN" items={items.filter((item) => item.href.startsWith('/admin/'))} /> : null}</div><div className="sidebar-foot"><b>2026년 09월 발주계획</b><br />Supabase analytics · Phase 2</div></aside>;
 }

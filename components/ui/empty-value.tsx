@@ -1,5 +1,4 @@
-import { formatUnavailable } from '@/lib/ui';
-
-export default function EmptyValue({ reason, className = '' }: { reason?: string | null; className?: string }) {
-  return <span className={`empty-value ${className}`.trim()}>{formatUnavailable(reason)}</span>;
+export default function EmptyValue({ reasonCode = 'CALCULATION_UNAVAILABLE' }: { reasonCode?: string }) {
+  return <span className="empty-value" title={reasonCode}>— + {reasonCode}</span>;
 }
+

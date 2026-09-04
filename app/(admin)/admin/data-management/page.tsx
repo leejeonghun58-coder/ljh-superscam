@@ -1,12 +1,2 @@
-import PageHeader from '@/components/shell/page-header';
-import Panel from '@/components/ui/panel';
-import { requireAdmin } from '@/lib/auth';
-import { getImportHistory } from '@/lib/import/history';
-import ImportForm from './import-form';
-import HistoryTable from './history-table';
-export const dynamic = 'force-dynamic';
-export default async function DataManagementPage() {
-  await requireAdmin(); let history: Array<Record<string, unknown>> = []; let historyError: string | null = null;
-  try { history = await getImportHistory(); } catch (error) { historyError = error instanceof Error ? error.message : 'Import History 조회에 실패했습니다.'; }
-  return <section className="analysis-page"><PageHeader eyebrow="ADMIN / DATA MANAGEMENT" title="데이터 적재 관리" description="CSV·XLSX를 검증하고 승인한 뒤 RAW 계층에 적재합니다." /><ImportForm /><Panel title="Import History" meta="최근 50개 batch">{historyError ? <p className="text-danger">조회에 실패했습니다: {historyError}</p> : history.length === 0 ? <p className="empty-state">아직 Import 이력이 없습니다.</p> : <HistoryTable initialItems={history as never[]} />}</Panel></section>;
-}
+import PageHeader from '@/components/shell/page-header'; import Panel from '@/components/ui/panel'; import ImportManager from '@/components/admin/import-manager'; import { requireAdmin } from '@/lib/auth'; import { createSupabaseServerClient } from '@/lib/supabase/server';
+export default async function DataManagementPage(){await requireAdmin();const {data}=await (await createSupabaseServerClient()).schema('core').from('upload_batch').select('batch_id,file_name,import_type,import_mode,total_rows,success_rows,warning_rows,error_rows,status,uploaded_at').order('uploaded_at',{ascending:false}).limit(20);return <section className="analysis-page"><PageHeader eyebrow="ADMIN" title="데이터 관리" description="파일 적재 전 Preview·매핑·검증을 확인합니다."/><Panel title="File Upload"><ImportManager/></Panel><Panel title="Import History"><div className="analysis-table-wrap"><table className="analysis-table"><thead><tr><th>파일</th><th>타입</th><th>모드</th><th>총 행</th><th>성공</th><th>경고</th><th>오류</th><th>상태</th></tr></thead><tbody>{(data??[]).map(r=><tr key={r.batch_id}><td>{r.file_name}</td><td>{r.import_type}</td><td>{r.import_mode}</td><td>{r.total_rows}</td><td>{r.success_rows}</td><td>{r.warning_rows}</td><td>{r.error_rows}</td><td>{r.status}</td></tr>)}</tbody></table></div></Panel></section>}

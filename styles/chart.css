@@ -1,1 +1,2 @@
-.chart-placeholder { min-height: 180px; display: grid; place-items: center; color: var(--scm-muted); background: var(--scm-surface-subtle); border: 1px dashed var(--scm-line); border-radius: var(--scm-radius-sm); }
+.chart-surface{min-height:220px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-subtle);display:grid;place-items:center;color:var(--muted)}.chart-legend{display:flex;flex-wrap:wrap;gap:var(--space-3);color:var(--muted);font-size:11px}.chart-legend-item{display:inline-flex;align-items:center;gap:6px}.chart-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}.chart-dot.safe{background:var(--green)}.chart-dot.warning{background:var(--amber)}.chart-dot.critical{background:var(--red)}
+

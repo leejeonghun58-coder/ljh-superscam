@@ -49,6 +49,11 @@ from analytics.v_sku_demand_profile
 where n_periods < 24
   and seasonality is not null;
 
+select count(*) as insufficient_periods_without_reason
+from analytics.v_sku_demand_profile
+where n_periods between 1 and 23
+  and (seasonality is not null or reason_code <> 'INSUFFICIENT_PERIODS');
+
 select count(*) as unexplained_unavailable_profiles
 from analytics.v_sku_demand_profile
 where demand_type is null

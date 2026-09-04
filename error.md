@@ -1,314 +1,295 @@
 # 오류 기록
 
-## 2026-08-27 — `Invalid schema: analytics`
+에러가 날 때마다 여기에 **증상 → 원인 → 해결** 을 추가합니다.
+증상이 같아 보여도 원인이 다른 경우가 많으므로, 화면에 뜬 **오류 문구를 그대로** 적습니다.
 
-### 증상
+## 빠른 찾기
 
-`/analysis/leadtime`에서 다음 오류가 표시됨.
+| 오류 문구 | 원인 | 해결 |
+|---|---|---|
+| `... is not a function` | import 한 함수가 `lib/` 에 없음 | [#1](#1-x-is-not-a-function) |
+| 표는 뜨는데 값이 전부 `—` | 정규화 함수의 컬럼 후보 이름이 뷰와 불일치 | [#2](#2-표는-뜨는데-값이-전부--로-나온다) |
+| `Invalid schema: analytics` (PGRST106) | 스키마가 API 에 **노출** 안 됨 | [#3](#3-invalid-schema-analytics) |
+| `permission denied for schema analytics` (42501) | 스키마에 **GRANT** 없음 | [#4](#4-permission-denied-for-schema-analytics) |
+| `permission denied for table leadtime_plan` (42501) | 테이블에 쓰기 GRANT 없음 | [#5](#5-permission-denied-for-table-leadtime_plan--조회하면-빈-배열) |
+| 조회는 되는데 빈 배열 `[]` | RLS 만 켜지고 정책이 없음 | [#5](#5-permission-denied-for-table-leadtime_plan--조회하면-빈-배열) |
+| 고쳤는데 화면이 그대로 | dev 서버 / 브라우저 캐시 | [#6](#6-db-는-고쳤는데-화면은-옛-오류-그대로) |
+| `npm run build` 실패 | 아래 참조 | [#7](#7-npm-run-build-가-실패한다) |
+| 배포 화면에서 사이드바와 본문이 기본 HTML처럼 세로로 깨짐 | `styles/shell.css`의 셸 규칙이 덮어써짐 | [#8](#8-배포-화면에서-사이드바와-본문이-기본-html처럼-깨진다) |
+| `supabase db lint --local` connection refused | 로컬 Supabase DB가 실행되지 않음 | [#9](#9-supabase-db-lint---local-connection-refused) |
+| `ERROR: 42P01: relation "core.policy_config" does not exist` | STEP 5를 STEP 3보다 먼저 또는 단독 실행 | [#10](#10-error-42p01-relation-corepolicy_config-does-not-exist) |
 
-```text
-조회에 실패했습니다.
-Invalid schema: analytics
+> **Supabase 3층 구조를 먼저 기억하면 #3·#4·#5 를 헷갈리지 않습니다.**
+>
+> ```
+> 1층  Exposed schemas   PostgREST 가 그 스키마로 라우팅할지   → 아니면 Invalid schema
+> 2층  GRANT             Postgres 롤이 접근할 수 있는지        → 아니면 permission denied
+> 3층  RLS 정책          그 롤이 어느 행을 볼 수 있는지        → 아니면 빈 배열 []
+> ```
+>
+> 1층만 확인하고 넘어가면 2층·3층 문제를 못 찾습니다. 세 층은 서로 독립입니다.
+
+---
+
+## #1 `X is not a function`
+
+**증상**
+
+```
+Uncaught TypeError: (0 , _lib_scm__WEBPACK_IMPORTED_MODULE_3__.getStockoutRisks) is not a function
+    at StockoutPage (page.tsx:42:21)
 ```
 
-### 확인 결과
+**원인**
+`app/analysis/leadtime/page.tsx` 자리에 리드타임 예제가 아니라 **오후 실습 정답(재고 소진 위험) 페이지**가 들어가 있었습니다.
+그 파일은 `getStockoutRisks` 와 `StockoutRisk` 를 import 하는데, 배포본 `lib/` 에는 그 둘이 **의도적으로 없습니다**
+(참가자가 오후에 만들 몫이라 `README_배포전_확인.md` 가 "없어야 함" 으로 검사하는 항목입니다).
+없는 export 를 import 하면 `undefined` 가 되고, 호출하는 순간 TypeError 가 납니다.
 
-- `app/analysis/leadtime/page.tsx`와 `lib/scm.ts`는 올바르게 `.schema('analytics')`를 사용하고 있음.
-- `.env.local`의 Supabase URL은 `https://<project-ref>.supabase.co` 형식이고 publishable key도 설정되어 있음.
-- 저장소의 `dump.sql`에는 `analytics` 스키마와 `analytics.v_leadtime_gap` 뷰 정의가 있음.
-- 따라서 앱 코드보다는 **앱이 연결된 Supabase 프로젝트의 Data API 스키마 노출 상태, 실제 스키마 존재 여부, 또는 PostgREST 설정 캐시**를 확인해야 함.
-- 대시보드에서 체크했는데도 계속 발생하면 현재 `.env.local`의 프로젝트가 설정을 변경한 Supabase 프로젝트와 같은지 확인해야 함.
+**해결**
+`app/analysis/leadtime/page.tsx` 를 `getLeadtimeGap` / `LeadtimeGap` 을 쓰는 본보기 화면으로 다시 작성했습니다.
 
-### 해결 순서
-
-1. Supabase Dashboard에서 `.env.local`의 `NEXT_PUBLIC_SUPABASE_URL`과 같은 프로젝트를 연다.
-2. **Project Settings → API → Data API → Exposed schemas**에서 `analytics`와 `core`를 체크한다.
-3. **Save**를 눌러 변경사항을 저장한다. `public`도 기존 선택값이면 유지한다.
-4. SQL Editor에서 스키마와 뷰 존재 여부를 확인한다.
-
-```sql
-select schema_name
-from information_schema.schemata
-where schema_name in ('analytics', 'core', 'raw');
-
-select table_schema, table_name
-from information_schema.views
-where table_schema = 'analytics'
-  and table_name = 'v_leadtime_gap';
-```
-
-5. `analytics` 또는 `v_leadtime_gap`이 없으면 저장소의 `dump.sql`을 해당 프로젝트에 복원한다.
-6. 복원 후 `sql/01-grants.sql`을 실행해 `anon`·`authenticated`의 읽기 권한을 부여한다.
-7. 개발 서버를 완전히 중지한 뒤 다시 실행한다.
+**예방** — 배포 전 이 3줄이 모두 비어 있어야 합니다.
 
 ```bash
+grep -n "StockoutRisk" lib/scm-model.ts
+grep -n "getStockoutRisks" lib/scm.ts
+ls app/analysis/stockout            # No such file 이어야 함
+```
+
+---
+
+## #2 표는 뜨는데 값이 전부 `—` 로 나온다
+
+**증상** 오류는 안 나고 행 수도 맞는데 숫자 칸이 전부 `—`.
+
+**원인**
+`normalizeLeadtimeGap` 이 찾던 컬럼 이름이 실제 `analytics.v_leadtime_gap` 컬럼과 하나도 안 맞았습니다.
+
+| 화면 필드 | 찾던 이름 | 실제 컬럼 |
+|---|---|---|
+| masterLeadTime | `master_lt` | `std_lead_time` |
+| sampleCount | `sample_count` | `n_samples` |
+| actualAverage | `actual_avg` | `mean_days` |
+| p80 | `p80` | `p80_days` |
+| gap | `gap` | `gap_days` |
+
+정규화 함수는 못 찾으면 `null` 을 돌려주므로 **오류 없이 조용히** 빈 값이 됩니다. 그래서 더 찾기 어렵습니다.
+
+**해결** `lib/scm-model.ts` 의 컬럼 후보 목록 맨 앞에 실제 이름을 추가했습니다(기존 이름도 그대로 둡니다).
+
+**예방** 새 정규화 함수를 만들면 `lib/scm-model.test.ts` 에 **실제 뷰 컬럼명으로** 테스트를 한 개 추가합니다. `npm test` 로 돌립니다.
+
+---
+
+## #3 `Invalid schema: analytics`
+
+**증상**
+
+```
+Invalid schema: analytics          (PostgREST 코드 PGRST106)
+```
+
+**원인** 그 스키마가 Data API 에 **노출**되어 있지 않습니다. 권한 문제가 아닙니다.
+
+**해결** Supabase → Project Settings → API → **Exposed schemas** 에 `core`, `analytics` 추가 후 Save.
+
+**확인** — 일부러 없는 스키마를 요청하면 노출 목록을 알려줍니다.
+
+```bash
+curl -s -H "apikey: $KEY" -H "Accept-Profile: __nope__" \
+  "$URL/rest/v1/x?select=*"
+# → "Only the following schemas are exposed: public, graphql_public, analytics, core"
+```
+
+---
+
+## #4 `permission denied for schema analytics`
+
+**증상**
+
+```
+{"code":"42501","message":"permission denied for schema analytics"}
+```
+
+**원인**
+`dump.sql` 에 **GRANT 문이 한 줄도 없습니다**(`grep -c GRANT dump.sql` → 0).
+덤프를 복원하면 스키마와 뷰가 전부 `postgres` 소유로만 만들어지고 `anon` 롤에는 권한이 붙지 않습니다.
+**Exposed schemas 를 켜도 이 오류는 그대로 납니다.** 노출과 권한은 별개입니다(위 3층 구조 참조).
+
+**해결** SQL Editor 에서 `sql/01-grants.sql` 실행.
+
+**★ 덤프를 다시 복원할 때마다 다시 실행해야 합니다.**
+`dump.sql` 은 맨 앞에서 뷰와 스키마를 `DROP` 하는데, 객체를 drop 하면 거기 붙어 있던 GRANT 도 같이 사라집니다.
+`alter default privileges` 설정도 스키마에 붙어 있어서 스키마가 drop 되면 함께 날아갑니다.
+Exposed schemas 는 DB 가 아니라 프로젝트 설정이라 살아남습니다 — 그래서 복원 후에는
+"노출은 되는데 권한만 없는" 조합(#4)이 됩니다.
+
+---
+
+## #5 `permission denied for table leadtime_plan` / 조회하면 빈 배열
+
+**증상**
+
+```
+SELECT core.leadtime_plan  →  []
+UPDATE core.leadtime_plan  →  42501 permission denied for table leadtime_plan
+                              hint: "GRANT UPDATE ON core.leadtime_plan TO anon"
+```
+
+**원인** 두 가지가 겹칩니다.
+- `core.leadtime_plan` 과 `core.usage_profile` 은 `dump.sql` 에서 **RLS 만 켜지고 정책이 없습니다**(dump.sql:10936, 10948). 정책 없는 RLS 는 "전부 거부" 라 SELECT 가 빈 배열로 옵니다.
+- 쓰기는 RLS 이전에 **테이블 GRANT** 자체가 없습니다. `01-grants.sql` 은 `select` 만 줍니다.
+
+**해결** 앱에서 이 두 테이블을 저장까지 하려면 `sql/02-policies.sql` 실행 (GRANT + 정책 둘 다 들어 있습니다).
+SQL Editor / Table Editor 로만 값을 바꿀 거면 실행하지 않아도 됩니다 — 그쪽은 `postgres` 롤이라 RLS 를 우회합니다.
+
+**함정** `core.leadtime_plan` 은 수업 전에 원래 0행이 정상입니다.
+그래서 **"아직 안 채운 것"과 "RLS 가 막은 것"이 화면상 구분되지 않습니다.**
+값을 넣었는데도 화면이 비어 있으면 이걸 의심하세요.
+
+---
+
+## #6 DB 는 고쳤는데 화면은 옛 오류 그대로
+
+**증상** SQL 도 돌렸고 REST 로는 200 이 오는데, 브라우저 화면은 여전히 옛 오류 문구.
+
+**원인** 설정을 바꾸기 **전에** 띄운 dev 서버 / 브라우저가 옛 결과를 붙들고 있습니다.
+
+**해결**
+
+```bash
+Ctrl+C
 npm run dev
 ```
+그리고 브라우저 강제 새로고침 (`Cmd+Shift+R`).
 
-### 코드 보완
-
-`lib/scm-model.ts`에 오류 메시지 변환을 추가했고, `lib/scm.ts`가 `Invalid schema: analytics`를 감지하면 위 대시보드 설정과 `dump.sql` 복원 안내를 화면에 함께 표시하도록 했다. 이 변경은 Supabase의 원격 설정을 대신 바꾸지는 않지만, 같은 오류가 발생했을 때 원인과 조치를 바로 확인할 수 있게 한다.
-
-### 참고
-
-Data API의 Exposed schemas 설정과 PostgreSQL 권한은 서로 다르다. 노출 설정 후에도 `permission denied for schema analytics`가 나오면 `sql/01-grants.sql`을 실행해야 한다. `Invalid schema: analytics`는 권한 오류보다 앞 단계인 스키마 노출/존재/캐시 문제다.
-
-## 최종 확인 — 개발 서버 네트워크 실행 환경
-
-대시보드 설정을 확인한 뒤에도 화면에서 `TypeError: fetch failed`가 표시되었다. 개발 서버가 샌드박스 네트워크 환경에서 실행되어 외부 Supabase API 요청이 차단된 것이 최종 원인이었다.
-
-기존 개발 서버를 종료하고 네트워크 연결이 가능한 환경에서 다시 실행한 뒤 `/analysis/leadtime`을 새로고침하자 공급처 12행이 정상 표시되었다.
+**확인** — 화면을 믿기 전에 DB 쪽을 먼저 갈라서 봅니다. 200 이 오면 문제는 DB 가 아니라 화면 쪽입니다.
 
 ```bash
-npm run dev -- --port 3001
+set -a && . ./.env.local && set +a
+curl -s -w "\n[HTTP %{http_code}]\n" \
+  -H "apikey: $NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+  -H "Accept-Profile: analytics" \
+  "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/v_leadtime_gap?select=supplier_name&limit=2"
 ```
 
-화면에 `Invalid schema: analytics`가 계속 표시되는 경우에는 이 항목보다 먼저 Exposed schemas, 스키마·뷰 존재 여부, 프로젝트 URL 일치 여부를 확인한다. 화면에 `TypeError: fetch failed`가 표시되면 개발 서버의 외부 네트워크 접근 권한과 Supabase URL 접속 가능성을 확인한다.
+---
 
-## 2026-08-27 — Vercel 배포에서 `Invalid schema: analytics`
+## #7 `npm run build` 가 실패한다
 
-### 증상
+**증상 A**
 
-로컬에서는 `/analysis/leadtime`이 정상적으로 12개 공급처를 표시하지만, Vercel 배포본에서는 다음 오류가 표시됨.
+```
+Type error: 'env' is possibly 'null'.
+  app/api/health/supabase/route.ts:6  if (!env.configured)
+```
+
+**원인** `getSupabaseEnv()` 가 옛 버전에서는 `{ configured: boolean }` 를 돌려줬지만, 지금은 실패 시 **`null`** 을 돌려줍니다.
+**해결** `if (!env)` 로 고칩니다.
+
+**증상 B**
+
+```
+error TS5097: An import path can only end with a '.ts' extension
+  lib/scm-model.test.ts:3  import { normalizeLeadtimeGap } from './scm-model.ts';
+```
+
+**원인** `node --test` 로 테스트를 돌리려면 `.ts` 확장자가 필요한데, 기본 tsconfig 는 이를 거부합니다.
+**해결** `tsconfig.json` 에 `"allowImportingTsExtensions": true` 추가. 테스트는 `npm test`.
+
+**증상 C**
 
 ```text
-조회에 실패했습니다.
-Invalid schema: analytics
+lib/supabase/server.ts: Parameter 'cookiesToSet' implicitly has an 'any' type
 ```
 
-### 원인
+**원인** `@supabase/ssr`의 cookie adapter 객체에서 `setAll` 콜백 인자가 현재 TypeScript 설정으로 자동 추론되지 않았습니다.
 
-Vercel은 로컬 `.env.local`을 사용하지 않는다. Vercel Project Settings에 등록된 `NEXT_PUBLIC_SUPABASE_URL`이 가리키는 Supabase 프로젝트에서 `analytics`가 Data API에 노출되어 있지 않거나, 로컬과 다른 Supabase 프로젝트를 가리키고 있는 상태다.
+**해결** `SetAllCookies` 타입을 import하고 `Parameters<SetAllCookies>[0]`으로 `cookiesToSet`을 명시합니다. middleware의 cookie adapter에도 같은 타입을 적용합니다.
 
-환경변수가 완전히 없었다면 `lib/supabase/env.ts`의 환경변수 오류가 먼저 발생하므로, 이번 메시지는 환경변수는 읽혔지만 해당 Supabase API에서 `analytics` 스키마를 허용하지 않는 경우에 해당한다.
+---
 
-### 해결 순서
+## #8 배포 화면에서 사이드바와 본문이 기본 HTML처럼 깨진다
 
-1. Vercel Project → **Settings → Environment Variables**에서 Production의 `NEXT_PUBLIC_SUPABASE_URL` 프로젝트 ref를 확인한다.
-2. 로컬 `.env.local`의 URL과 같은 Supabase 프로젝트인지 비교한다.
-3. 그 Supabase 프로젝트의 **Project Settings → API → Data API → Exposed schemas**에서 `analytics`, `core`, `public`을 체크하고 Save한다.
-4. SQL Editor에서 `analytics.v_leadtime_gap` 뷰가 실제로 존재하는지 확인한다.
-5. Vercel에서 **Redeploy**한다. 환경변수와 Data API 설정은 기존 배포에 자동으로 재반영되지 않을 수 있다.
+**증상**
 
-```sql
-select schema_name
-from information_schema.schemata
-where schema_name in ('analytics', 'core', 'raw');
+- 사이드바가 왼쪽 고정 열이 아니라 페이지 위쪽의 일반 텍스트처럼 표시됩니다.
+- 메뉴 링크가 한 줄로 붙고 상단바와 본문 글자 크기가 브라우저 기본값처럼 커집니다.
+- `npm run build`는 성공하지만 실제 배포 화면의 레이아웃은 깨집니다.
 
-select table_schema, table_name
-from information_schema.views
-where table_schema = 'analytics'
-  and table_name = 'v_leadtime_gap';
-```
+**원인**
 
-### 추가 확인
+`app/globals.css`는 정상적으로 `styles/shell.css`를 import하고 있었지만,
+`styles/shell.css` 안에는 분석 탭 규칙만 남아 있었습니다. 이전 패치가 한 줄로 압축된 파일 전체를 교체하면서
+`.app-shell`, `.sidebar`, `.topbar`, `.content`, 모바일 media query가 함께 삭제됐습니다.
 
-스키마 노출 후 `permission denied for schema analytics`가 나오면 `sql/01-grants.sql`을 해당 Supabase 프로젝트에서 실행한다. Vercel에 환경변수를 새로 등록하거나 수정한 경우에도 반드시 새 배포가 필요하다.
+**해결**
 
-## 2026-08-27 — 로컬에서 `.env.local` 누락 메시지 표시
+`styles/shell.css`에 앱 셸, 250px 사이드바, sticky 상단바, 콘텐츠 영역, 분석 탭,
+760px 모바일 전환 규칙을 디자인 토큰 기반으로 복원했습니다.
 
-### 확인 결과
+**예방**
 
-현재 저장소의 `.env.local`에는 다음 두 변수가 모두 설정되어 있다.
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-
-네트워크 권한으로 실행된 `http://localhost:3001`에서는 리드타임 12행이 정상 조회되었다. 동시에 3000 포트와 3001 포트에 서로 다른 Node 개발 서버가 실행 중인 것이 확인되었다.
-
-### 원인
-
-화면이 `env.ts`의 누락 메시지를 표시한다면 `.env.local`을 읽지 못한 다른 개발 서버(오래된 3000 포트 프로세스)에 접속했거나, 환경변수 파일 변경 전에 시작된 서버를 보고 있는 경우다.
-
-### 해결
-
-현재 프로젝트 서버는 다음 주소로 접속한다.
+`lib/design-system.test.ts`가 다음 필수 규칙을 검사합니다.
 
 ```text
-http://localhost:3001/analysis/leadtime
+.app-shell  .sidebar  .topbar  .content  .nav-button
+@media (max-width: 760px)
 ```
 
-환경변수를 변경한 뒤에는 개발 서버를 완전히 종료하고 프로젝트 루트에서 다시 실행한다.
-## 2026-08-28 — 터미널 런타임 초기화 실패
+CSS 변경 후 `npm test`와 `npm run build`를 모두 실행하고, production 서버에서 사이드바 계산 폭이
+`250px`인지 확인합니다.
 
-### 증상
+---
 
-Codex의 일반 `exec_command` 실행 시 다음 오류가 발생함.
+## #9 `supabase db lint --local` connection refused
+
+**증상**
 
 ```text
-Failed to create unified exec process: helper_unknown_error: setup refresh had errors
+failed to connect to host=127.0.0.1 port=54322: connection refused
 ```
 
-### 해결
+**원인**
 
-권한이 필요한 독립 PowerShell 실행으로 프로젝트 접근을 복구했다. 일반 샌드박스 실행은 계속 실패했지만, 독립 실행에서는 프로젝트 확인·수정·테스트가 정상 동작했다.
-## 2026-08-28 — 로그인 후 다시 로그인 화면으로 돌아감
+Supabase CLI는 설치되어 있지만 `supabase start`로 로컬 PostgreSQL이 실행되지 않은 상태입니다.
 
-### 증상
+**해결**
 
-이메일과 비밀번호를 입력해도 로그인 화면을 벗어나지 못함.
+Docker가 실행 중인 개발 환경에서 `supabase start` 후 `supabase db lint --local`을 다시 실행합니다.
+로컬 DB를 사용하지 않는 배포 환경에서는 연결된 프로젝트를 확인한 뒤 migration을 적용합니다.
 
-### 원인 후보
+---
 
-STEP 2 migration은 GitHub에 push되었지만 Supabase 프로젝트에 자동 적용되지 않습니다. `core.app_user` 테이블/`auth.users` 생성 trigger가 적용되지 않았거나, migration 적용 전에 이미 만들어진 Auth 사용자에게 `core.app_user` 행이 없으면 `signInWithPassword` 이후 `requireUser()`가 프로필을 찾지 못해 `/login?error=inactive`로 되돌립니다. 로그인 action은 `record_login()` 오류를 현재 무시하므로 실제 DB 미적용 원인이 화면에 드러나지 않습니다.
+## #10 `ERROR: 42P01: relation "core.policy_config" does not exist`
 
-### 해결
+**증상**
 
-1. Supabase SQL Editor에서 `supabase/migrations/20260828000200_step2_auth_rbac.sql`을 실행한다.
-2. migration 전에 만들어진 사용자 프로필을 보정한다.
+```text
+Failed to run sql query: ERROR: 42P01: relation "core.policy_config" does not exist
+LINE 3: insert into core.policy_config (policy_key, policy_value, description)
+```
+
+**원인**
+
+STEP 5 SQL의 첫 번째 `insert`가 참조하는 `core.policy_config` 테이블은 STEP 5에서 생성하지 않습니다. 이 테이블은 `supabase/migrations/20260828000200_step3_data_isolation.sql`에서 생성됩니다. STEP 5 내용만 복사해 SQL Editor에서 단독 실행하면 테이블이 없어 42P01이 발생합니다.
+
+**해결**
+
+SQL Editor에서 아래 순서로 전체 파일을 실행합니다.
+
+```text
+STEP 2  20260828000100_step2_auth_rbac.sql
+STEP 3  20260828000200_step3_data_isolation.sql
+STEP 4  20260828000300_step4_import_pipeline.sql
+STEP 5  20260828000400_step5_sku_demand_profile.sql
+```
+
+이미 STEP 2~4를 실행했다면 STEP 5만 다시 실행하면 됩니다. STEP 3 실행 여부는 다음 쿼리로 확인할 수 있습니다.
 
 ```sql
-insert into core.app_user (user_id, email, name)
-select id, email, coalesce(raw_user_meta_data ->> 'name', raw_user_meta_data ->> 'full_name')
-from auth.users u
-where not exists (select 1 from core.app_user p where p.user_id = u.id);
+select to_regclass('core.policy_config');
 ```
 
-3. 최초 관리자 계정을 지정한다.
-
-```sql
-update core.app_user set role = 'ADMIN' where email = '관리자 이메일';
-```
-
-4. 로컬에서 테스트한다면 개발 서버를 실행한다.
-
-```bash
-npm run dev -- --port 3001
-```
-
-5. `/login`에서 다시 로그인한다.
-## 2026-08-28 — 재고 소진 위험 전체 품목 `NO_USAGE`
-
-### 증상
-
-`/analysis/stockout`에서 분석 품목 20개가 모두 `— + NO_USAGE`로 표시되고, 소진 위험·안전·30일 이내 소진 KPI가 모두 0으로 표시됨.
-
-### 원인
-
-STEP 3 migration의 `core.forecast_setting` 기본 행은 생성되지만 `train_start`, `train_end`, `test_start`, `test_end`가 모두 `NULL`인 상태임.
-
-`core.v_train_demand`는 다음 조건을 요구하므로 날짜 설정이 없으면 0행을 반환함.
-
-```sql
-s.train_start is not null
-and s.train_end is not null
-and u.use_date between s.train_start and s.train_end
-```
-
-이후 `core.v_usage_effective`가 빈 학습 뷰를 집계하고, `analytics.v_stockout_risk`의 사용량 조인이 모든 품목에서 `NULL`이 됨. 화면의 `NO_USAGE` 표시는 이 계산 불가 상태를 숫자 0으로 숨기지 않은 정상 표시임.
-
-### 확인 쿼리
-
-```sql
-select * from core.forecast_setting where setting_id = 'default';
-select count(*) from core.v_train_demand;
-select count(*) from core.v_test_actual;
-select * from analytics.v_data_coverage;
-```
-
-### 해결
-
-관리자 권한으로 `/admin/forecast-settings`에서 학습·검증 기간을 실제 데이터 범위 안에 설정해야 함. 저장 후 `/analysis/stockout`을 새로고침함.
-
-현재 dump 기준 데이터 범위는 `2025-03-03`부터 `2026-08-21`까지이며, 실제 운영 기준에 맞는 train/test 경계를 먼저 결정해야 함. 앱 코드에 날짜를 하드코딩하거나 계산 불가 값을 0으로 바꾸면 안 됨.
-## 2026-08-28 — STEP 4 SQL migration 작성 중 문법 오타
-
-### 증상
-
-신규 import migration의 함수 선언 앞에 불필요한 `a` 문자가 들어간 것을 자체 검토에서 발견함.
-
-### 해결
-
-원격 Supabase에 적용하기 전에 `create or replace function`으로 수정했다. SQL migration은 원격 적용 전 문자열 검토와 SQL Editor 실행 결과를 함께 확인한다.
-## 2026-08-28 — STEP 4 타입 점검에서 기존 정규식 target 오류
-
-### 증상
-
-`npx tsc --noEmit` 실행 시 `lib/scm-model.test.ts(60,44)`에서 정규식 플래그가 `es2018` 이상을 요구한다는 오류가 발생함.
-
-### 확인 결과
-
-STEP 4 파일과 무관하게 기존 테스트 코드가 `tsconfig.json`의 `target: es5`와 충돌하는 상태임. Next.js production build의 별도 타입 검사 결과로 앱 영향 여부를 확인하고, 기존 테스트 파일/target 설정은 범위를 넓히지 않기 위해 보류함.
-
-## 2026-08-28 STEP 4 테스트 중복 import 오류
-
-- 증상: `parse.test.ts`, `validate.test.ts`에 테스트를 추가하는 과정에서 import 블록이 중복되어 `Identifier 'test' has already been declared`가 발생했다.
-- 원인: 기존 테스트 파일 하단에 새 테스트와 import를 append했다.
-- 해결: 각 테스트 파일의 import를 파일 상단의 단일 블록으로 통합하고 전체 테스트를 다시 구성했다.
-- 결과: `npm test` 24개 통과.
-
-## 2026-08-28 — STEP 4 Data Management 진입 시 서버 예외 digest
-
-- 증상: Vercel에서 `/admin/data-management` 선택 시 `Application error: a server-side exception has occurred`와 digest가 표시됨.
-- 원인: Sidebar가 USER에게도 ADMIN 메뉴를 노출했고, USER 접근 시 `requireAdmin()`이 호출하는 Next.js `forbidden()`이 `experimental.authInterrupts` 비활성 상태에서 실행되어 정상 403 대신 예외로 처리됨.
-- 해결: `next.config.ts`에 `experimental.authInterrupts: true`를 활성화하고 `app/forbidden.tsx` 403 경계 화면을 추가했다. `getMenuForRole()`을 통해 ADMIN 메뉴는 ADMIN에게만 노출한다. 서버의 `requireAdmin()` 및 DB RLS 검증은 그대로 유지한다.
-
-## 2026-08-28 — 권한 처리 수정 후 Next 설정 구문 오류
-
-- 증상: `npm run build`에서 `next.config.ts`의 `Expected unicode escape` 오류 발생.
-- 원인: PowerShell 문자열 치환 시 줄바꿈이 실제 개행이 아니라 리터럴 `\n`으로 저장됨.
-- 해결: `next.config.ts`를 정상 개행 형식으로 다시 저장했다.
-
-## 2026-08-28 — 권한 메뉴 수정 후 Sidebar 구문 오류
-
-- 증상: `npm run build`에서 `sidebar.tsx`의 `Expected unicode escape` 오류 발생.
-- 원인: 문자열 치환 중 import 사이의 줄바꿈이 리터럴 `\n`으로 기록됨.
-- 해결: `sidebar.tsx`를 정상 개행 형식으로 재작성했다.
-
-## 2026-08-28 — STEP 4 메뉴가 보이지 않음
-
-- 증상: ADMIN 사용자가 로그인해도 Sidebar에 STEP 4 `Data Management` 메뉴가 표시되지 않음.
-- 원인: `AppShell`이 기본 `role='USER'`로 동작하는데 `app/(admin)/layout.tsx`가 `role='ADMIN'`을 전달하지 않음.
-- 해결: 관리자 layout에서 `<AppShell role="ADMIN">`을 사용하도록 수정했다. USER의 ADMIN 메뉴 숨김 동작은 유지한다.
-
-## 2026-08-28 — role 전달 수정 중 PowerShell 인용 오류
-
-- 증상: layout 수정 명령에서 `Missing ')' in method call` 구문 오류가 발생해 첫 번째 수정 시도는 실행되지 않음.
-- 원인: PowerShell 문자열 안의 JSX 큰따옴표를 잘못 escape함.
-- 해결: 작은따옴표 기반 문자열 치환으로 다시 실행했고, 메인·분석·USER layout에 실제 role 전달을 정상 반영함.
-
-## 2026-08-28 — 신규 ID ADMIN 지정 후 로그인 실패
-
-- 원인: Supabase Auth의 `auth.users` 인증 계정과 애플리케이션 권한 프로필 `core.app_user`는 별개다. 신규 Auth 사용자에 `core.app_user` 행이 없거나 `active = false`이면 `requireUser()`가 로그인 직후 비활성 사용자로 처리한다.
-- 추가 확인: `core.handle_new_auth_user` trigger가 실제 Supabase 프로젝트에 적용되어 있어야 신규 Auth 사용자 생성 시 프로필이 자동 생성된다. 저장소 migration을 push하는 것만으로 원격 DB에 trigger가 적용되지는 않는다.
-- 확인 쿼리: `auth.users`와 `core.app_user`를 `user_id`로 조인해 이메일, role, active를 확인한다.
-
-## 2026-08-28 — `at89c2@naver.com` 로그인 성공 후 ADMIN 메뉴 미표시
-
-- 확인: 제공된 화면에서 로그인은 성공했으므로 Supabase Auth 이메일/비밀번호 인증은 정상이다.
-- 증상: ADMIN 메뉴가 보이지 않으므로 현재 세션의 `core.app_user` role이 `USER`이거나 해당 프로필이 ADMIN으로 갱신되지 않은 상태로 판단된다.
-- 조치: `auth.users`와 `core.app_user`를 user_id로 조인해 해당 이메일의 role/active를 확인하고, 필요한 경우 role을 ADMIN으로 갱신한다.
-
-## 2026-08-28 — SQL Editor에서 신규 ADMIN profile upsert 실패
-
-- 증상: `core.app_user` upsert 실행 시 `관리자만 사용자를 변경할 수 있습니다`가 발생함.
-- 원인: `on conflict do update`가 `app_user_update_guard()` trigger를 실행하지만 SQL Editor 요청에는 애플리케이션 로그인 세션의 `auth.uid()`가 없어 `core.is_admin()`이 false가 됨.
-- 해결: 기존 활성 ADMIN 사용자의 UUID를 확인한 뒤 SQL Editor의 임시 request JWT claims에 해당 UUID를 설정하고 upsert한다. 이때도 DB trigger와 RLS 검사는 유지된다.
-
-## 2026-08-28 — ADMIN UUID placeholder를 그대로 실행한 오류
-
-- 증상: `invalid input syntax for type uuid: "기존_ADMIN_UUID"` 발생.
-- 원인: SQL 예시의 placeholder를 실제 UUID로 교체하지 않고 실행함.
-- 해결: 기존 활성 ADMIN의 UUID를 서브쿼리로 자동 조회하는 SQL을 사용하거나, `auth.users.id`의 실제 UUID를 입력한다.
-
-## 2026-08-28 — 활성 ADMIN이 없어 bootstrap claims를 만들 수 없음
-
-- 증상: 기존 활성 ADMIN UUID를 자동 조회하는 SQL에서 `활성 ADMIN 계정이 없습니다.` 발생.
-- 원인: 현재 `core.app_user`에 활성 ADMIN이 한 명도 없어 `core.is_admin()`을 통과할 관리자 세션을 만들 수 없음.
-- 해결: 최초 관리자 bootstrap 시 SQL Editor에서 `app_user_update_guard`만 트랜잭션 동안 비활성화하고 대상 계정을 ADMIN/active로 설정한 뒤 즉시 다시 활성화한다. 이후 일반 role 변경은 애플리케이션의 관리자 세션을 사용한다.
-
-## 2026-08-28 — STEP 5 메뉴 추가 중 TypeScript 구문 오류
-
-- 증상: `npm test`에서 `lib/menu.ts`의 `Expected unicode escape` 오류 발생.
-- 원인: PowerShell 문자열 치환 시 메뉴 항목 앞 줄바꿈이 리터럴 `\n`으로 저장됨.
-- 해결: 리터럴 문자를 실제 개행으로 치환했다.
-
-## 2026-08-28 — STEP 5 SQL round 타입 호환 보정
-
-- 확인: PostgreSQL `regr_slope`는 double precision을 반환하므로 `round(value, 4)` 호출이 타입 오류가 될 수 있음.
-- 해결: trend 값을 `numeric`으로 명시적 변환한 뒤 소수점 4자리로 반올림하도록 migration을 보정했다.
-
-## 2026-08-28 — STEP 5 테스트가 leakage 검사를 무의미하게 수행한 문제
-
-- 확인: 초기 SQL test 쿼리가 `where false`로 항상 0행만 반환해 test leakage를 실질적으로 검증하지 못함.
-- 해결: `pg_views.view_definition`에서 `core.v_train_demand` 사용과 `core.v_test_actual` 미사용을 직접 확인하도록 변경했다.
+결과가 `core.policy_config`로 나오면 STEP 5를 실행합니다. `null`이면 STEP 3을 먼저 실행합니다. 각 단계는 `if not exists`와 `on conflict do nothing`을 사용하므로 이미 적용된 단계도 재실행할 수 있습니다.

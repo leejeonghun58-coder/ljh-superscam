@@ -24,7 +24,7 @@ test('workflow 메뉴는 레거시 화면의 단계 URL로 연결된다', () => 
 });
 
 test('USER 메뉴에는 분석 화면이 유지된다', () => {
-  assert.deepEqual(USER_MENU.map((item) => item.href), ['/analysis/leadtime', '/analysis/stockout', '/analysis/demand-profile']);
+  assert.deepEqual(USER_MENU.map((item) => item.href), ['/analysis/leadtime', '/analysis/stockout', '/analysis/demand-profile', '/analysis/model-comparison']);
 });
 
 test('관리자 데이터 관리 메뉴가 등록된다', () => {
@@ -34,3 +34,4 @@ test('USER에게 ADMIN 메뉴를 노출하지 않는다', () => {
   assert.equal(getMenuForRole('USER').ADMIN.length, 0);
   assert.ok(getMenuForRole('ADMIN').ADMIN.length > 0);
 });
+

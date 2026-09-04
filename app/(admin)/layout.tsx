@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
-import AppShell from '@/components/shell/app-shell';
+import Sidebar from '@/components/shell/sidebar';
+import Topbar from '@/components/shell/topbar';
 import { requireAdmin } from '@/lib/auth';
-export const dynamic = 'force-dynamic';
-export default async function AdminLayout({ children }: { children: ReactNode }) { await requireAdmin(); return <AppShell title="관리자" role="ADMIN">{children}</AppShell>; }
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const { profile } = await requireAdmin();
+  return <div className="app-shell"><Sidebar role={profile.role} /><main className="main"><Topbar name={profile.name || profile.email} role={profile.role} /><div className="content">{children}</div></main></div>;
+}
+

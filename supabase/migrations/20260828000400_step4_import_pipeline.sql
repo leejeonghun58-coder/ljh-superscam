@@ -82,6 +82,11 @@ revoke all on core.upload_batch, core.import_staging, core.column_mapping, core.
 revoke all on core.upload_batch, core.import_staging, core.column_mapping, core.validation_error, core.forecast_run from authenticated;
 grant usage on schema core to authenticated;
 grant select, insert, update, delete on core.upload_batch, core.import_staging, core.column_mapping, core.validation_error, core.forecast_run to authenticated;
+create or replace view core.v_import_supplier_master as
+select distinct upper(regexp_replace("공급업체코드", '[\s\-_]', '', 'g')) as supplier_id
+from raw.supplier_master
+where nullif(trim("공급업체코드"), '') is not null;
+grant select on core.v_import_supplier_master to authenticated;
 
 create or replace function core.approve_import_batch(p_batch_id uuid, p_replace_confirmed boolean default false)
 returns void language plpgsql security definer set search_path = core, public as $$
@@ -92,6 +97,7 @@ begin
   if not found then raise exception '존재하지 않는 batch입니다'; end if;
   if v_batch.status <> 'VALIDATED' then raise exception '검증 완료 batch만 승인할 수 있습니다'; end if;
   if v_batch.error_rows > 0 then raise exception 'ERROR 행이 있는 batch는 승인할 수 없습니다'; end if;
+  if v_batch.import_mode = 'replace' and not p_replace_confirmed then raise exception 'replace는 사용자 확인이 필요합니다'; end if;
   update core.upload_batch set status = 'APPROVED', approved_at = now() where batch_id = p_batch_id;
 end;
 $$;

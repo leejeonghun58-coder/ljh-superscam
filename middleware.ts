@@ -1,22 +1,46 @@
+import { createServerClient, type SetAllCookies } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import type { CookieOptions } from '@supabase/ssr';
 import { getSupabaseEnv } from '@/lib/supabase/env';
+import { routeAccessDecision } from '@/lib/auth-policy';
 
-const protectedPrefixes = ['/', '/dashboard', '/analysis', '/admin', '/workflow'];
-const publicPaths = ['/login'];
+const protectedPrefixes = ['/dashboard', '/analysis', '/admin', '/workflow'];
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) => prefix === '/' ? pathname === '/' : pathname.startsWith(prefix));
-  if (!isProtected || publicPaths.includes(pathname)) return NextResponse.next();
+  const protectedRoute = protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  if (!protectedRoute) return NextResponse.next();
+
   const env = getSupabaseEnv();
-  if (!env) return NextResponse.next();
+  if (!env) return new NextResponse('Supabase 환경변수가 필요합니다.', { status: 503 });
+
   let response = NextResponse.next({ request });
-  const supabase = createServerClient(env.url, env.publishableKey, { cookies: { getAll: () => request.cookies.getAll(), setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) { cookiesToSet.forEach(({ name, value, options }) => { request.cookies.set(name, value); response = NextResponse.next({ request }); response.cookies.set(name, value, options); }); } } });
+  const supabase = createServerClient(env.url, env.publishableKey, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
+  });
+
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { const loginUrl = new URL('/login', request.url); loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`); return NextResponse.redirect(loginUrl); }
+  if (!user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.search = '';
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const { data: profile } = await supabase.schema('core').from('app_user').select('role, active').eq('user_id', user.id).maybeSingle();
+  const access = routeAccessDecision({ pathname, authenticated: true, active: profile?.active === true, role: profile?.role === 'ADMIN' ? 'ADMIN' : profile?.role === 'USER' ? 'USER' : null });
+  if (access.kind === 'FORBIDDEN') return new NextResponse('이 경로에 접근할 권한이 없습니다.', { status: 403 });
+
   return response;
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api/health).*)'] };
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+};

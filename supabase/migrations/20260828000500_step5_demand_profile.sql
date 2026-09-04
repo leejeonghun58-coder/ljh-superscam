@@ -95,7 +95,7 @@ peak as (
     item_id,
     period as peak_period
   from periods
-  where quantity is not null
+  where quantity > 0
   order by item_id, quantity desc, period asc
 ),
 profile as (
@@ -125,6 +125,7 @@ profile as (
     case
       when not exists (select 1 from setting where train_start_month is not null and train_end_month is not null) then 'NO_TRAIN_SETTING'
       when coalesce(s.n_periods, 0) = 0 then 'NO_TRAIN_DATA'
+      when s.n_periods < 24 then 'INSUFFICIENT_PERIODS'
       when coalesce(s.has_source_null, false) then 'NULL_QUANTITY'
       when s.n_nonzero_periods = 0 then 'NO_POSITIVE_DEMAND'
       when s.n_nonzero_periods < 2 or s.positive_mean = 0 then 'INSUFFICIENT_NONZERO_PERIODS'

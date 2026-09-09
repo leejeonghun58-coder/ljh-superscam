@@ -329,3 +329,17 @@ Vercel 배포에서 `IMPORT_MODES` 미export, `Panel.meta`/`EmptyValue.reason`/`
 **현재 상태**
 
 `npm run build`는 성공했습니다. 테스트 호환 export/반환 계약은 별도 정리 대상이며, 이번 배포 오류 수정 범위에는 포함하지 않았습니다.
+
+## #12 Agent 대화 migration의 함수 권한 회수 순서
+
+**증상**
+
+Migration 정적 검증 중 `core.save_agent_turn` 함수가 생성되기 전에 같은 함수에 `REVOKE`가 실행되는 순서가 확인되었습니다.
+
+**원인**
+
+PostgreSQL은 아직 존재하지 않는 함수에 대한 `REVOKE`를 실행할 수 없으므로 신규 환경에서 migration이 중단될 수 있습니다.
+
+**해결**
+
+함수 생성 뒤에만 `REVOKE ALL ... FROM public, anon`을 실행하도록 순서를 정리했습니다. `authenticated`에 대한 `EXECUTE` 권한은 그대로 유지합니다.
